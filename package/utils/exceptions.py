@@ -1,0 +1,2 @@
+class InvalidDatafileException(Exception):
+    pass
