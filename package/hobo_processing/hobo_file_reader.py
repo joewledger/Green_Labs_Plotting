@@ -2,7 +2,7 @@ import pandas as pd
 import numpy
 import package.utils.exceptions as ex
 
-class HoboFileReader():
+class HoboDataContainer():
 
     def __init__(self):
         self.filename = None

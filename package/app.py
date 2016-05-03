@@ -9,6 +9,10 @@ class Application:
     def __init__(self):
         self.working_file = None
         self.save_directory = None
+        self.curr_graph = 0
+        self.graph_count = 0
+        self.hobo_data_container = hfr.HoboDataContainer()
+        self.graphs = []
 
     def run(self):
         app = QApplication(sys.argv)
@@ -16,10 +20,6 @@ class Application:
         ui = mainwindow.Ui_MainWindow()
         ui.setupUi(window)
         controllers.setup_controllers(self,ui)
-
-        h = hfr.HoboFileReader()
-
-
         window.show()
         app.exec_()
 
