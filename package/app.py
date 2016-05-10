@@ -1,4 +1,5 @@
 import sys
+from PyQt5 import QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from package.ui import mainwindow,controllers
@@ -18,10 +19,15 @@ class Application:
     def run(self):
         app = QApplication(sys.argv)
         window = QMainWindow()
+        window.setWindowTitle("CWRU Green Labs Plotting Utility")
         self.window = window
         ui = mainwindow.Ui_MainWindow()
         ui.setupUi(window)
-        main_controller = controllers.Main_Controller(app,ui)
+        main_controller = controllers.Main_Controller(self,ui)
         main_controller.setup_controllers()
         window.show()
         app.exec_()
+
+    def get_background_color(self):
+        return self.window.palette().color(QtGui.QPalette.Background).name()
+

@@ -1,6 +1,5 @@
 from package.utils import fileUtils
 from package.plotting import plotting as plt
-from functools import partial
 
 import package.hobo_processing.hobo_file_reader as hfr
 from PyQt5.QtCore import *
@@ -17,6 +16,8 @@ class Main_Controller():
     def __init__(self,app,ui):
         self.app = app
         self.ui = ui
+        background_color = self.app.get_background_color()
+        self.canvas =  plt.MplCanvas(parent = self.ui.centralWidget,color=background_color)
 
     def setup_controllers(self):
         self.ui.file_select.clicked.connect(self.recieve_file_selection)
@@ -38,8 +39,8 @@ class Main_Controller():
     def recieve_generate_graphs(self):
         comm = Communicate()
         comm.signal.connect(self.recieve_data_container)
-        self.start_import(comm,self.app.working_file)
-    
+        self.start_import(comm,self.app.working_file)        
+
     def recieve_view_previous(self):
         if(self.app.curr_graph in range(2,self.app.graph_count + 1)):
             self.app.curr_graph -= 1
@@ -58,6 +59,8 @@ class Main_Controller():
         thread.start()
 
     def import_datafile(self,datafile,comm):
+        self.ui.generate_graphs.setEnabled(False)
+        self.ui.program_status.setText("Importing Datafile")
         hdc = hfr.HoboDataContainer()
         hdc.import_datafile(datafile)
         comm.signal.emit(hdc)
@@ -67,3 +70,8 @@ class Main_Controller():
         self.app.curr_graph = 1
         self.app.graph_count = plt.determine_num_graphs(self.app.hobo_data_container)
         self.set_graph_count()
+        self.ui.program_status.setText("Generating Graphs")
+        self.canvas.compute_new_figures(self.app.hobo_data_container)
+        self.ui.program_status.setText("Done Generating Graphs")
+        self.ui.save_status.setText("Unsaved graphs")
+        self.ui.generate_graphs.setEnabled(True)
