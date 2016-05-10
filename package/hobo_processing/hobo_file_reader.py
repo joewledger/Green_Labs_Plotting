@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy
 import package.utils.exceptions as ex
+import numpy as np
 
 class HoboDataContainer():
 
@@ -24,26 +25,26 @@ class HoboDataContainer():
         self.boolean_valued = False
         self.even_time_increments = False
 
-    def import_datafile(self,datafile,debug=False):
+    def import_datafile(self,datafile):
+
         self.filename = datafile
-        if(debug):
+
+        try:
             self.dataframe = self.read_data(datafile)
             self.trim_data()
-            self.valid_datafile = self.verify_valid_datafile()
-        else:
-            try:
-                self.dataframe = self.read_data(datafile)
-                self.trim_data()
-                self.valid_datafile = self.verify_valid_datafile()
-            except:
-                self.valid_datafile = False
+            self.verify_valid_datafile()
+        except:
+            self.valid_datafile = False
+
         if(self.valid_datafile):
-            self.sensor_type = self.infer_sensor_type()
+            self.infer_sensor_type()
             self.fields = self.dataframe.columns
-            self.boolean_valued = self.infer_boolean_data()
-            self.even_time_increments = self.infer_even_time_increments()
-            self.missing_values = self.check_missing_values()
-            self.date_range = self.get_date_range()
+            self.infer_boolean_data()
+            if(self.boolean_valued):
+                self.convert_boolean_data()
+            self.infer_even_time_increments()
+            self.infer_missing_values()
+            self.infer_date_range()
         
 
     def read_data(self,datafile):
@@ -108,10 +109,10 @@ class HoboDataContainer():
     #assumes that self.dataframe is already populated with a valid pandas dataframe
     def verify_valid_datafile(self):
         #Checks to make sure all index entries are Timestamp objects
-        check_timestamps = lambda df : all(type(x) == pandas.tslib.Timestamp for x in list(df.index))
+        check_timestamps = lambda df : all(type(x) == pd.tslib.Timestamp for x in list(df.index))
         #Checks to make sure at least some of the valid column names are represented
         check_legal_column_names = lambda df : True
-        return check_timestamps(self.dataframe) and check_legal_column_names(self.dataframe)
+        self.valid_datafile = check_timestamps(self.dataframe) and check_legal_column_names(self.dataframe)
 
     #Infers a sensor type from the dataframe by comparing the columns of the dataframe against the legal column names
     #for each of the sensor types predefined in self.legal_columns
@@ -127,16 +128,27 @@ class HoboDataContainer():
         
 
     def infer_boolean_data(self):
-        return None
+        boolean_values = [np.float64(0),np.float64(1)]
+        is_boolean_column = lambda col_name : all(x in boolean_values for x in self.dataframe[col_name].dropna())
+        self.boolean_valued = all(is_boolean_column(x) for x in self.dataframe.columns)
+
+
+    def convert_boolean_data(self):
+        self.dataframe.fillna(method="ffill",inplace=True)
+        self.dataframe = self.dataframe.astype('bool')
 
     def infer_even_time_increments(self):
-        return None
+        index = list(self.dataframe.index)
+        first_diff = index[1] - index[0]
+        self.even_time_increments = all(index[i] - index[i-1] == first_diff for i in range(2,len(index)))
 
-    def check_missing_values(self):
-        return None
 
-    def get_date_range(self):
-        return None
+    def infer_missing_values(self):
+        self.missing_values = self.dataframe.isnull().any()
+
+    def infer_date_range(self):
+        index = self.dataframe.index
+        self.date_range = index[0],index[-1]
 
     def get_time_series(self,field_names, time_range, all_dates=False,
                         insert_even_time_increments=False,only_even_time_increments=False,even_time_increments=None):

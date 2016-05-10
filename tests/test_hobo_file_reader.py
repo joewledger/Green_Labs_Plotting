@@ -1,6 +1,6 @@
 import package.hobo_processing.hobo_file_reader as hfr
 import pandas
-import numpy
+import numpy as np
 
 def test_trim_data():
 
@@ -75,13 +75,71 @@ def test_infer_sensor_type():
     test_datafile("sample_data/sample_state_data.csv","state")
 
 def test_infer_boolean_data():
+
+    def test_datafile(filename,label):
+
+        hdc = hfr.HoboDataContainer()
+
+        hdc.dataframe = hdc.read_data(filename)
+        hdc.trim_data()
+        hdc.infer_boolean_data()
+
+        assert hdc.boolean_valued == label
+
+    test_datafile("sample_data/sample_power_data_truncated.csv",False)
+    test_datafile("sample_data/sample_light_data.csv",True)
+    test_datafile("sample_data/sample_temperature_data.csv",False)
+    test_datafile("sample_data/sample_state_data.csv",True)
+    pass
+
+def test_convert_boolean_data():
+
+    def test_datafile(filename):
+        hdc = hfr.HoboDataContainer()
+
+        hdc.dataframe = hdc.read_data(filename)
+        hdc.trim_data()
+        hdc.convert_boolean_data()
+
+        assert all(type(x) == np.dtype for x in list(hdc.dataframe.dtypes))
+
+    test_datafile("sample_data/sample_light_data.csv")
+    test_datafile("sample_data/sample_state_data.csv")
+
     pass
 
 def test_infer_even_time_increments():
     pass
 
-def test_check_missing_values():
+def test_infer_missing_values():
+    hdc = hfr.HoboDataContainer()
+    hdc.dataframe = hdc.read_data("sample_data/sample_temperature_data.csv")
+    hdc.trim_data()
+    hdc.infer_even_time_increments()
+    print(hdc.even_time_increments)
+
+
+
+def test_infer_date_range():
+    hdc = hfr.HoboDataContainer()
+
+    hdc.dataframe = hdc.read_data("sample_data/sample_light_data.csv")
+    hdc.trim_data()
+    hdc.infer_date_range()
+
+    is_timestamp = lambda ts : type(ts) == pandas.tslib.Timestamp
+
+    date_range = hdc.date_range
+    assert is_timestamp(date_range[0]) and is_timestamp(date_range[1])
     pass
 
-def test_get_date_range():
-    pass
+def test_import_datafile():
+    hdc = hfr.HoboDataContainer()
+
+    #hdc.import_datafile("sample_data/sample_light_data.csv") 
+    #print(hdc.dataframe)
+
+    hdc.import_datafile("sample_data/sample_temperature_data.csv") 
+    print(hdc.dataframe)
+
+
