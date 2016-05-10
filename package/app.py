@@ -7,6 +7,7 @@ import package.hobo_processing.hobo_file_reader as hfr
 class Application:
 
     def __init__(self):
+        self.window = None
         self.working_file = None
         self.save_directory = None
         self.curr_graph = 0
@@ -17,10 +18,10 @@ class Application:
     def run(self):
         app = QApplication(sys.argv)
         window = QMainWindow()
+        self.window = window
         ui = mainwindow.Ui_MainWindow()
         ui.setupUi(window)
-        controllers.setup_controllers(self,ui)
+        main_controller = controllers.Main_Controller(app,ui)
+        main_controller.setup_controllers()
         window.show()
         app.exec_()
-
-

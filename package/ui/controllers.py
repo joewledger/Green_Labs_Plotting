@@ -2,40 +2,68 @@ from package.utils import fileUtils
 from package.plotting import plotting as plt
 from functools import partial
 
-def setup_controllers(app,ui):
-    ui.file_select.clicked.connect(partial(recieve_file_selection, app = app, ui=ui))
-    ui.select_save_loc.clicked.connect(partial(recieve_save_loc_selection,app = app,ui=ui))
-    ui.generate_graphs.clicked.connect(partial(recieve_generate_graphs,app=app,ui=ui))
-    ui.view_previous.clicked.connect(partial(recieve_view_previous,app=app,ui=ui))
-    ui.view_next.clicked.connect(partial(recieve_view_next,app=app,ui=ui))
+import package.hobo_processing.hobo_file_reader as hfr
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+import sys
+import threading
 
 
-def recieve_file_selection(app,ui):
-    file = fileUtils.fileDialog()
-    ui.file_display.setText(file)
-    app.working_file = file
+class Communicate(QObject):
+    signal = pyqtSignal(hfr.HoboDataContainer)
 
-def recieve_save_loc_selection(app,ui):
-    save_loc = fileUtils.directoryDialog()
-    ui.display_save_loc.setText(save_loc)
-    app.save_loc = save_loc
+class Main_Controller():
 
-def recieve_generate_graphs(app,ui):
-    #app.hobo_data_container.import_datafile(app.working_file)
-    num_graphs = plt.determine_num_graphs(app.hobo_data_container)
-    app.curr_graph = 1
-    app.graph_count = num_graphs
-    set_graph_count(app,ui)
+    def __init__(self,app,ui):
+        self.app = app
+        self.ui = ui
+
+    def setup_controllers(self):
+        self.ui.file_select.clicked.connect(self.recieve_file_selection)
+        self.ui.select_save_loc.clicked.connect(self.recieve_save_loc_selection)
+        self.ui.generate_graphs.clicked.connect(self.recieve_generate_graphs)
+        self.ui.view_previous.clicked.connect(self.recieve_view_previous)
+        self.ui.view_next.clicked.connect(self.recieve_view_next)
+
+    def recieve_file_selection(self):
+        file = fileUtils.fileDialog()
+        self.ui.file_display.setText(file)
+        self.app.working_file = file
+
+    def recieve_save_loc_selection(self):
+        save_loc = fileUtils.directoryDialog()
+        self.ui.display_save_loc.setText(save_loc)
+        self.app.save_loc = save_loc
+
+    def recieve_generate_graphs(self):
+        comm = Communicate()
+        comm.signal.connect(self.recieve_data_container)
+        self.start_import(comm,self.app.working_file)
     
-def recieve_view_previous(app,ui):
-    if(app.curr_graph in range(2,app.graph_count + 1)):
-        app.curr_graph -= 1
-        set_graph_count(app,ui)
+    def recieve_view_previous(self):
+        if(self.app.curr_graph in range(2,self.app.graph_count + 1)):
+            self.app.curr_graph -= 1
+            self.set_graph_count()
 
-def recieve_view_next(app,ui):
-    if(app.curr_graph in range(1,app.graph_count)):
-        app.curr_graph += 1
-        set_graph_count(app,ui)
+    def recieve_view_next(self):
+        if(self.app.curr_graph in range(1,self.app.graph_count)):
+            self.app.curr_graph += 1
+            self.set_graph_count()
 
-def set_graph_count(app,ui):
-    ui.graph_count.setText("%d/%d" % (app.curr_graph,app.graph_count))
+    def set_graph_count(self):
+        self.ui.graph_count.setText("%d/%d" % (self.app.curr_graph,self.app.graph_count))
+
+    def start_import(self,comm,datafile):  
+        thread = threading.Thread(target=self.import_datafile,args=(datafile,comm,))
+        thread.start()
+
+    def import_datafile(self,datafile,comm):
+        hdc = hfr.HoboDataContainer()
+        hdc.import_datafile(datafile)
+        comm.signal.emit(hdc)
+
+    def recieve_data_container(self,hdc):
+        self.app.hobo_data_container = hdc
+        self.app.curr_graph = 1
+        self.app.graph_count = plt.determine_num_graphs(self.app.hobo_data_container)
+        self.set_graph_count()
