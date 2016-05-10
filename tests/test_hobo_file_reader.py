@@ -1,18 +1,87 @@
 import package.hobo_processing.hobo_file_reader as hfr
+import pandas
+import numpy
 
+def test_trim_data():
 
-def test_read_data():
+    def test_dataframe(filename,col_list):
+        hdc = hfr.HoboDataContainer()
+        hdc.dataframe = hdc.read_data(filename)
+        hdc.trim_data()
+        #Check to make sure _clean_column_names and _remove_dropable_columns worked correctly
+        assert list(hdc.dataframe) == col_list
+        #Check to make sure _remove_nan_columns worked
+        assert not any(hdc.dataframe[x].isnull().all() for x in hdc.dataframe.columns)
+        #Check to make sure _remove_duplicate_index_labels worked
+        assert not hdc.dataframe.index.duplicated().any()
+        #Check to make sure _remove_logging_information worked
+        assert True
+
+    light_file = "sample_data/sample_light_data.csv"
+    state_file = "sample_data/sample_state_data.csv"
+    power_file = "sample_data/sample_power_data_truncated.csv"
+    temp_file = "sample_data/sample_temperature_data.csv"
+
     hdc = hfr.HoboDataContainer()
 
-    light_df = hdc.read_data("sample_data/sample_light_data.csv")
-    assert list(light_df.columns) == ['Light', 'Occupancy', 'Light On & Occ', 'Light On & Unocc', 'Light Off & Occ', 'Light Off & Unocc']
+    test_dataframe(light_file,hdc.legal_columns["light"])
+    test_dataframe(state_file,hdc.legal_columns["state"])
+    test_dataframe(power_file,hdc.legal_columns["power"])
+    test_dataframe(temp_file,hdc.legal_columns["temp"])
 
-    power_df = hdc.read_data("sample_data/sample_power_data.csv")
-    assert list(power_df.columns) == ['RMS Voltage, V', 'RMS Voltage - Max, V', 'RMS Voltage - Min, V', 'RMS Voltage - Avg, V', 'RMS Current, A', 'RMS Current - Max, A', 'RMS Current - Min, A', 'RMS Current - Avg, A', 'Active Power, W', 'Active Power - Max, W', 'Active Power - Min, W', 'Active Power - Avg, W', 'Active Energy, Wh', 'Apparent Power, VA', 'Apparent Power - Max, VA', 'Apparent Power - Min, VA', 'Apparent Power - Avg, VA', 'Power Factor, PF', 'Power Factor - Max, PF', 'Power Factor - Min, PF', 'Power Factor - Avg, PF']
 
-    state_df = hdc.read_data("sample_data/sample_state_data.csv")
-    assert list(state_df.columns) == ["State"]
+def test_remove_duplicate_index_labels():
+    hdc = hfr.HoboDataContainer()
 
-    temp_df = hdc.read_data("sample_data/sample_temperature_data.csv")
-    assert list(temp_df.columns) == ['Temp, °F', 'RH, %', 'DewPt, °F']
+    hdc.dataframe = hdc.read_data("sample_data/sample_light_data.csv").head()
+    assert hdc.dataframe.index.duplicated().any()
+    hdc._remove_duplicate_index_labels()
+    assert not hdc.dataframe.index.duplicated().any()
+
+
+def test_remove_logging_information():
+
+    hdc = hfr.HoboDataContainer()
+
+    hdc.dataframe = hdc.read_data("sample_data/sample_power_data_truncated.csv")
+    hdc._clean_column_names()
+    hdc._remove_dropable_columns()
+    hdc._remove_duplicate_index_labels()
+
+    #Assert that the datafile has zero rows or null rows
+    assert True
+    hdc._remove_logging_information()
+    #Assert that every row in the datafile is not-null and non-zero
+    assert not False
+    pass
+
+def test_verify_valid_datafile():
+    pass
+
+def test_infer_sensor_type():
+
+    def test_datafile(filename,label):
+        hdc = hfr.HoboDataContainer()
+
+        hdc.dataframe = hdc.read_data(filename)
+        hdc._clean_column_names()
+        hdc._remove_dropable_columns()
+        hdc.infer_sensor_type()
+        assert hdc.sensor_type == label
+
+    test_datafile("sample_data/sample_power_data_truncated.csv","power")
+    test_datafile("sample_data/sample_light_data.csv","light")
+    test_datafile("sample_data/sample_temperature_data.csv","temp")
+    test_datafile("sample_data/sample_state_data.csv","state")
+
+def test_infer_boolean_data():
+    pass
+
+def test_infer_even_time_increments():
+    pass
+
+def test_check_missing_values():
+    pass
+
+def test_get_date_range():
     pass
