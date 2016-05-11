@@ -17,7 +17,7 @@ class Main_Controller():
         self.app = app
         self.ui = ui
         background_color = self.app.get_background_color()
-        self.canvas =  plt.MplCanvas(parent = self.ui.centralWidget,color=background_color)
+        self.canvas_collection =  plt.CanvasCollection(self.ui.centralWidget,background_color)
 
     def setup_controllers(self):
         self.ui.file_select.clicked.connect(self.recieve_file_selection)
@@ -44,11 +44,14 @@ class Main_Controller():
     def recieve_view_previous(self):
         if(self.app.curr_graph in range(2,self.app.graph_count + 1)):
             self.app.curr_graph -= 1
+            self.canvas_collection.view_canvas(self.app.curr_graph - 1)
             self.set_graph_count()
+
 
     def recieve_view_next(self):
         if(self.app.curr_graph in range(1,self.app.graph_count)):
             self.app.curr_graph += 1
+            self.canvas_collection.view_canvas(self.app.curr_graph - 1)
             self.set_graph_count()
 
     def set_graph_count(self):
@@ -67,11 +70,11 @@ class Main_Controller():
 
     def recieve_data_container(self,hdc):
         self.app.hobo_data_container = hdc
-        self.app.curr_graph = 1
-        self.app.graph_count = plt.determine_num_graphs(self.app.hobo_data_container)
-        self.set_graph_count()
         self.ui.program_status.setText("Generating Graphs")
-        self.canvas.compute_new_figures(self.app.hobo_data_container)
+        self.canvas_collection.update_canvases(self.app.hobo_data_container)
+        self.app.curr_graph = 1
+        self.app.graph_count = self.canvas_collection.num_canvases
+        self.set_graph_count()
         self.ui.program_status.setText("Done Generating Graphs")
         self.ui.save_status.setText("Unsaved graphs")
         self.ui.generate_graphs.setEnabled(True)
