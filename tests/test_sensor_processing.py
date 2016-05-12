@@ -3,10 +3,14 @@ import package.hobo_processing.hobo_file_reader as hfr
 
 import pandas as pd
 import math
+import numpy as np
 
 def test_interval_averages():
 	ibdp = setup_interval_processing()
-	print(hdc.interval_averages('Temp, °F',pd.TimeDelta('1 hours')))
+	start_time = pd.Timestamp("2/25/2016 10:45:23 AM")
+	end_time = pd.Timestamp("2/25/2016 10:47:53 AM")
+	print(ibdp.interval_averages('Temp, °F',pd.Timedelta('1 minutes'),start_time=start_time,end_time=end_time))
+	print(ibdp.interval_std('Temp, °F',pd.Timedelta('1 minutes'),start_time=start_time,end_time=end_time))
 
 def test_closest_timestamp():
 	

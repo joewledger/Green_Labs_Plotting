@@ -1,6 +1,6 @@
 import pandas as pd
 import math
-
+import numpy as np
 
 #This class is used for State and Lighting&Occupancy Data, i.e. data that is:
 #   Taken whenever a new observation is made (not at even time increments)
@@ -35,23 +35,40 @@ class IntervalBasedDataProcessing():
 
     #Returns the list of the average value of a series within a given time interval (i.e. 1 hour)
     #Series name is the series from which to draw data (i.e. 'Temp, °F')
-    #Interval length takes a pandas TimeDelta object
+    #Interval length takes a pandas Timedelta object
+    def calculate_interval_statistic(self,series_name,interval_length,resampler,start_time=None,end_time=None):
+        closest_start,closest_end = self.get_closest_start_end_times(start_time,end_time)
+        dataframe = self.hdc.dataframe.ix[start_time:end_time]
+        series = dataframe[series_name]
+        return series.resample(interval_length).apply(resampler)
+
+
     def interval_averages(self, series_name, interval_length,start_time=None,end_time=None):
+        mean = lambda array_like : np.mean(array_like)
+        return self.calculate_interval_statistic(series_name, interval_length,mean,start_time=start_time,end_time=end_time)
+
+    def interval_std(self, series_name, interval_length,start_time=None,end_time=None):
+        std_dev = lambda array_like : np.std(array_like)
+        return self.calculate_interval_statistic(series_name, interval_length,std_dev,start_time=start_time,end_time=end_time)
+
+
+    #Gets the start and end times closest to the provided start and end times in the dataframe
+    #For the start time, it looks for the closest time before if there isn't an exact match
+    #For the end time, it looks for the closest time after if there isn't an exact match
+    #If either start_time or end_time are None, the start and end times of the entire dataframe are used
+    def get_closest_start_end_times(self,start_time,end_time):
 
         if(start_time):
-            curr_time = get_closest_timestamp(start_time)
+            closest_start = self.get_closest_timestamp(start_time)
         else:
-            curr_time = self.hdc.dataframe.date_range[0]
+            closest_start = self.hdc.date_range[0]
 
         if(end_time):
-            closest_end = get_closest_timestamp(self, end_time,before=False)
+            closest_end = self.get_closest_timestamp(end_time,before=False)
         else:
-            closest_end = self.hdc.dataframe.date_range[1]
+            closest_end = self.hdc.date_range[1]
 
-        return None
-
-    def interval_std_devs(self, series_name, interval_length,start_time=None,end_time=None):
-        return None
+        return closest_start,closest_end
 
 
     #Returns the closest timestamp in the Hobo Data Container to the provided timestamp.
