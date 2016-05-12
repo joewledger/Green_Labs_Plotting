@@ -30,6 +30,9 @@ class CanvasCollection():
         return self.canvas_list[-1]
 
     def update_canvases(self,hdc):
+        self.canvas_list = [self.canvas_list[0]]
+        self.num_canvases = 0
+        self.curr_canvas = 0
         for key in graph_definitions.keys():
             if(hdc.sensor_type == key):
                 for plotting_function in [x for x in graph_definitions[key]]:
@@ -145,7 +148,24 @@ def state_bar_chart(figure,hdc=None):
 def active_energy_hourly_std_dev():
     return None
 
-def temp_avg_hourly_std_dev():
+def temp_avg_hourly_std_dev(figure, hdc = None):
+
+    axes = figure.add_subplot(111)
+
+    ibdp = sp.IntervalBasedDataProcessing(hdc)
+
+    
+
+
+
+
+    axes.set_xlabel()
+    axes.set_ylabel()
+    axes.set_aspect(1)
+    axes.set_title("Average Temperature in ThinkBox")
+
+
+
     return None
 
 def temp_avg_hourly_std_err():
