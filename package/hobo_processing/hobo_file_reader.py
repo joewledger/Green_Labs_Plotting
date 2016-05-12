@@ -19,11 +19,13 @@ class HoboDataContainer():
         self.valid_datafile = False
         self.sensor_type = None
         self.fields = None
-        self.date_range = None
         self.dataframe = None
         self.missing_values = False
         self.boolean_valued = False
         self.even_time_increments = False
+        self.date_range = None
+        #Stored as a pandas TimeDelta object
+        self.total_time = None
 
     def import_datafile(self,datafile):
 
@@ -45,6 +47,7 @@ class HoboDataContainer():
             self.infer_even_time_increments()
             self.infer_missing_values()
             self.infer_date_range()
+            self.infer_total_time()
         
 
     def read_data(self,datafile):
@@ -150,17 +153,5 @@ class HoboDataContainer():
         index = self.dataframe.index
         self.date_range = index[0],index[-1]
 
-    def get_time_series(self,field_names, time_range, all_dates=False,
-                        insert_even_time_increments=False,only_even_time_increments=False,even_time_increments=None):
-        return None
-
-
-class HoboTimeSeries():
-    def __init__(self):
-        self.start_time = None
-        self.end_time = None
-        self.field_names = []
-        self.series_dict = {}
-        self.boolean_valued = False
-        self.inserted_values = False
-        self.full = False
+    def infer_total_time(self):
+        self.total_time = pd.Timedelta(self.date_range[1] - self.date_range[0])

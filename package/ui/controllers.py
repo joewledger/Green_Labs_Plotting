@@ -44,14 +44,14 @@ class Main_Controller():
     def recieve_view_previous(self):
         if(self.app.curr_graph in range(2,self.app.graph_count + 1)):
             self.app.curr_graph -= 1
-            self.canvas_collection.view_canvas(self.app.curr_graph - 1)
+            self.canvas_collection.view_canvas(self.app.curr_graph)
             self.set_graph_count()
 
 
     def recieve_view_next(self):
         if(self.app.curr_graph in range(1,self.app.graph_count)):
             self.app.curr_graph += 1
-            self.canvas_collection.view_canvas(self.app.curr_graph - 1)
+            self.canvas_collection.view_canvas(self.app.curr_graph)
             self.set_graph_count()
 
     def set_graph_count(self):
