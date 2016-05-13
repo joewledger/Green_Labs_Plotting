@@ -19,12 +19,12 @@ class Application:
     def run(self):
         app = QApplication(sys.argv)
         window = QMainWindow()
-        window.setWindowTitle("CWRU Green Labs Plotting Utility")
         self.window = window
         ui = mainwindow.Ui_MainWindow()
         ui.setupUi(window)
         main_controller = controllers.Main_Controller(self,ui)
         main_controller.setup_controllers()
+        window.setWindowTitle("CWRU Green Labs Plotting Utility")
         window.show()
         app.exec_()
 

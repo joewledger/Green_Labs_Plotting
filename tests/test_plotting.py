@@ -24,3 +24,18 @@ def test_light_occupancy_pie_chart_quad():
 	#print(fig.canvas.get_supported_filetypes())
 	plt.show()
 
+def test_temp_avg_hourly_std_dev():
+
+	fig = plt.figure()
+
+	hdc = hfr.HoboDataContainer()
+	hdc.import_datafile("sample_data/sample_temperature_data_truncated4.csv")
+
+	plotting.temp_avg_hourly_std_dev(fig,hdc=hdc)
+
+	plt.show()
+
+def test_get_supported_filetypes():
+
+	canvas = plotting.MplCanvas()
+	print(canvas.get_supported_filetypes())
