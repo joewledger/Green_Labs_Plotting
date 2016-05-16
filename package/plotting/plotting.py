@@ -61,6 +61,12 @@ class CanvasCollection():
     def save_current(self,save_location):
         self.canvas_list[self.curr_canvas].figure.savefig(save_location)
 
+    def get_current_canvas(self):
+        return self.canvas_list[self.curr_canvas]
+
+    def get_current_plotter(self):
+        return self.plotters[self.curr_canvas]
+
 
 class MplCanvas(FigureCanvas):
 
@@ -94,6 +100,28 @@ class Plotter():
     def add_params(self,new_params):
         for key in new_params:
             self.params[key] = new_params[key]
+
+class Parameter_Expectation():
+
+    def __init__(self,param_name,param_type):
+        self.param_name = param_name
+        self.param_type = param_type
+
+    def copy_new_list_length(self,n):
+        return Parameter_Expectation(self.param_name,self.param_type.copy_new_list_length(n))
+
+    def __str__(self):
+        return self.param_name
+
+class Param_Type_Wrapper():
+
+    def __init__(self,_type,is_list=False,length=1):
+        self._type = _type
+        self.is_list = is_list
+        self.length = length
+
+    def copy_new_list_length(self,n):
+        return Param_Type_Wrapper(self._type, is_list=self.is_list,length=n)
 
 #Draws a blank canvas
 def blank_canvas(figure,hdc=None,params=None):
@@ -173,7 +201,7 @@ def state_bar_chart(figure,hdc=None,params=None):
     axes.set_xlabel("Status")
     axes.set_ylabel("Percentage of Time")
     axes.set_aspect(1)
-    axes.set_title("Thinkbox Laser Cutter Open/Closed Patterns")
+    axes.set_title("Equipment Open/Closed Patterns")
 
 
 
@@ -217,6 +245,10 @@ def temp_avg_hourly_std_err(figure, hdc=None,params=None):
     axes = figure.add_subplot(111)
 
 
+title_param = Parameter_Expectation("Title",Param_Type_Wrapper(str))
+x_label_param = Parameter_Expectation("X-Axis Label", Param_Type_Wrapper(str))
+y_label_param = Parameter_Expectation("Y-Axis Label", Param_Type_Wrapper(str))
+
 
 graph_definitions = {"light" : [light_occupancy_pie_chart_single,light_occupancy_pie_chart_quad],
                      "state" : [state_bar_chart],
@@ -224,8 +256,4 @@ graph_definitions = {"light" : [light_occupancy_pie_chart_single,light_occupancy
                      "temp" : [temp_avg_hourly_std_dev,temp_avg_hourly_std_err]
                      }
 
-
-params_requested = {
-    
-
-}
+expected_params = {state_bar_chart : [title_param,x_label_param,y_label_param], blank_canvas : []}
