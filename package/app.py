@@ -30,4 +30,3 @@ class Application:
 
     def get_background_color(self):
         return self.window.palette().color(QtGui.QPalette.Background).name()
-

@@ -2,10 +2,11 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-#from PyQt5.QtWidgets import QtWidget
+import package.utils.param_utils as param_utils
 
 class GraphEditWidget(QtWidgets.QWidget):
 
+    #requested_params and default_values are param_utils.Parameter_Collection objects
     def __init__(self,requested_params,default_values,communication):
 
         super().__init__()
@@ -27,16 +28,16 @@ class GraphEditWidget(QtWidgets.QWidget):
         layout.addWidget(header_labels[1],0,1)
 
 
-        self.param_name_to_line_edit = {}
+        self.param_expectation_to_line_edit = {}
 
-        for i,param_name in enumerate(requested_params):
-            self.param_name_to_line_edit[param_name] = QtWidgets.QLineEdit(self)
-            label = QtWidgets.QLabel(param_name,self)
+        for i,param_expectation in enumerate(requested_params):
+            self.param_expectation_to_line_edit[param_expectation] = QtWidgets.QLineEdit(self)
+            label = QtWidgets.QLabel(param_expectation.param_name,self)
             label.setAlignment(QtCore.Qt.AlignHCenter)
             layout.addWidget(label,i + 1,0)
-            layout.addWidget(self.param_name_to_line_edit[param_name],i + 1,1)
+            layout.addWidget(self.param_expectation_to_line_edit[param_expectation],i + 1,1)
 
-        num_fields = lambda s : len(s.param_name_to_line_edit) + 1
+        num_fields = lambda s : len(s.param_expectation_to_line_edit) + 1
 
 
         apply_button = QtWidgets.QPushButton(self)
@@ -58,7 +59,7 @@ class GraphEditWidget(QtWidgets.QWidget):
         self.setWindowTitle("Graph Options")
 
     def apply_changes(self):
-        change_dictionary = {name : self.param_name_to_line_edit[name].text() for name in self.param_name_to_line_edit}
+        change_dictionary = {expectation : self.param_expectation_to_line_edit[expectation].text() for expectation in self.param_expectation_to_line_edit}
         self.current_values = change_dictionary
         self.communication.signal.emit(change_dictionary)
 
@@ -72,9 +73,9 @@ class GraphEditWidget(QtWidgets.QWidget):
         self.close()
 
     def unsaved_changes(self):
-        field_blank = lambda field_name : self.param_name_to_line_edit[field_name].text() == ""
-        field_changed = lambda field_name : not self.param_name_to_line_edit[field_name].text() == self.current_values[field_name]
-        return any(not field_blank(f) and field_changed(f) for f in list(self.param_name_to_line_edit.keys()))
+        field_blank = lambda expectation : self.param_expectation_to_line_edit[expectation].text() == ""
+        field_changed = lambda expectation : not self.param_expectation_to_line_edit[expectation].text() == self.current_values[expectation]
+        return any(not field_blank(e) and field_changed(e) for e in list(self.param_expectation_to_line_edit.keys()))
 
     def prompt_discard_unsaved_changes(self):
         msg = "There are unsaved changes to the current graph. Do you want to discard them?"

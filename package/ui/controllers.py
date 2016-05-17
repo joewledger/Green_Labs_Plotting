@@ -6,6 +6,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 import sys
 import threading
+import copy
 
 import package.ui.graph_edit_dialog as ged
 
@@ -52,16 +53,18 @@ class Main_Controller():
             self.canvas_collection.save_current(save_location)
 
     def recieve_edit_graph(self):
-        #curr_plotter = self.canvas_collection.get_current_plotter()
-        #plotting_func = curr_plotter.plotting_func
-        #print(" ".join(str(x) for x in plt.expected_params[plotting_func]))
-        if(not self.check_unsaved_changes()):
+        curr_plotter = self.canvas_collection.get_current_plotter()
+        plotting_func = curr_plotter.plotting_func
+        expected_params = plt.expected_params.get(plotting_func,[])
 
+        if(not self.check_unsaved_changes() and len(expected_params) > 0):
+            
             comm = Communicate_Dict()
             comm.signal.connect(self.recieve_graph_changes)
-            requested_params = ["Title","X Axis","Y Axis"]
-            default_values = {"Title" : "T","X Axis" : "X","Y Axis" : "Y"}
-            graph_edit = ged.GraphEditWidget(requested_params,default_values,comm)
+
+            #requested_params = expected_params.unpack_names()
+            default_values = copy.copy(expected_params)
+            graph_edit = ged.GraphEditWidget(expected_params,default_values,comm)
             graph_edit.show()
             self.graph_edit = graph_edit
 
@@ -133,7 +136,9 @@ class Main_Controller():
     def recieve_data_container(self,hdc):
         self.app.hobo_data_container = hdc
         self.ui.program_status.setText("Generating Graphs")
-        self.canvas_collection.update_canvases(self.app.hobo_data_container)
+        #self.canvas_collection.update_canvases(self.app.hobo_data_container)
+        self.canvas_collection.update_hobo_data_container(self.app.hobo_data_container)
+        
         self.app.curr_graph = 1
         self.app.graph_count = self.canvas_collection.num_canvases
         self.set_graph_count()
