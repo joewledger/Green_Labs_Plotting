@@ -1,5 +1,6 @@
 from package.utils import fileUtils
 from package.plotting import plotting as plt
+import package.utils.param_utils as param_utils
 
 import package.hobo_processing.hobo_file_reader as hfr
 from PyQt5.QtCore import *
@@ -13,8 +14,8 @@ import package.ui.graph_edit_dialog as ged
 class Communicate(QObject):
     signal = pyqtSignal(hfr.HoboDataContainer)
 
-class Communicate_Dict(QObject):
-    signal = pyqtSignal(dict)
+class Communicate_Parameter_Collection(QObject):
+    signal = pyqtSignal(param_utils.Parameter_Collection)
 
 class Main_Controller():
 
@@ -54,22 +55,21 @@ class Main_Controller():
 
     def recieve_edit_graph(self):
         curr_plotter = self.canvas_collection.get_current_plotter()
-        plotting_func = curr_plotter.plotting_func
-        expected_params = plt.expected_params.get(plotting_func,[])
+        #curr_parameters is a Parameter_Collection Object
+        default_parameters = curr_plotter.get_default_parameters()
+        curr_parameters = curr_plotter.parameters
 
-        if(not self.check_unsaved_changes() and len(expected_params) > 0):
+        if(not self.check_unsaved_changes() and len(curr_parameters) > 0):
             
-            comm = Communicate_Dict()
+            comm = Communicate_Parameter_Collection()
             comm.signal.connect(self.recieve_graph_changes)
 
-            #requested_params = expected_params.unpack_names()
-            default_values = copy.copy(expected_params)
-            graph_edit = ged.GraphEditWidget(expected_params,default_values,comm)
+            graph_edit = ged.GraphEditWidget(default_parameters,curr_parameters,comm)
             graph_edit.show()
             self.graph_edit = graph_edit
 
-    def recieve_graph_changes(self,change_dict):
-        self.canvas_collection.update_plotter_params(change_dict,hdc = self.app.hobo_data_container)
+    def recieve_graph_changes(self,parameter_collection):
+        self.canvas_collection.update_curr_plot_params(parameter_collection)
 
     def save_error(self,message):
         msg = QMessageBox()

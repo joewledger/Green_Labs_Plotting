@@ -7,14 +7,14 @@ import package.utils.param_utils as param_utils
 class GraphEditWidget(QtWidgets.QWidget):
 
     #requested_params and default_values are param_utils.Parameter_Collection objects
-    def __init__(self,requested_params,default_values,communication):
+    def __init__(self,default_parameters,current_parameters,communication):
 
         super().__init__()
         self.resize(350,200)
 
-        self.requested_params = requested_params
-        self.default_values = default_values
-        self.current_values = default_values
+        #self.requested_params = requested_params
+        self.default_parameters = default_parameters
+        self.current_parameters = current_parameters
         self.communication = communication
 
         layout = QtWidgets.QGridLayout(self)
@@ -30,7 +30,7 @@ class GraphEditWidget(QtWidgets.QWidget):
 
         self.param_expectation_to_line_edit = {}
 
-        for i,param_expectation in enumerate(requested_params):
+        for i,param_expectation in enumerate(current_parameters):
             self.param_expectation_to_line_edit[param_expectation] = QtWidgets.QLineEdit(self)
             label = QtWidgets.QLabel(param_expectation.param_name,self)
             label.setAlignment(QtCore.Qt.AlignHCenter)
@@ -59,12 +59,16 @@ class GraphEditWidget(QtWidgets.QWidget):
         self.setWindowTitle("Graph Options")
 
     def apply_changes(self):
-        change_dictionary = {expectation : self.param_expectation_to_line_edit[expectation].text() for expectation in self.param_expectation_to_line_edit}
-        self.current_values = change_dictionary
-        self.communication.signal.emit(change_dictionary)
+        text = lambda exp : self.param_expectation_to_line_edit[exp].text()
+
+        change_dictionary = {expectation : text(expectation) for expectation in self.param_expectation_to_line_edit if text(expectation) != ""}
+        self.current_parameters.update_values(change_dictionary)
+        self.communication.signal.emit(self.current_parameters)
 
     def revert_to_default(self):
-        self.communication.signal.emit(self.default_values)
+        for line_edit in self.param_expectation_to_line_edit.values():
+            line_edit.setText("")
+        self.communication.signal.emit(self.default_parameters)
 
     def done(self):
         if(self.unsaved_changes()):
@@ -74,7 +78,7 @@ class GraphEditWidget(QtWidgets.QWidget):
 
     def unsaved_changes(self):
         field_blank = lambda expectation : self.param_expectation_to_line_edit[expectation].text() == ""
-        field_changed = lambda expectation : not self.param_expectation_to_line_edit[expectation].text() == self.current_values[expectation]
+        field_changed = lambda expectation : not self.param_expectation_to_line_edit[expectation].text() == self.current_parameters[expectation]
         return any(not field_blank(e) and field_changed(e) for e in list(self.param_expectation_to_line_edit.keys()))
 
     def prompt_discard_unsaved_changes(self):
