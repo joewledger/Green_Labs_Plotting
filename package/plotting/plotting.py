@@ -53,18 +53,23 @@ class CanvasCollection():
         self.plotters[0].plot(self.canvas_list[0])
 
     def update_hobo_data_container(self,hdc):
+        self.initialize_plotters_and_canvases(hdc.sensor_type)
+        self.update_plots(hdc)
+
+    def initialize_plotters_and_canvases(self,hobo_data_type):
         self.canvas_list = [self.canvas_list[0]]
         self.plotters = [self.plotters[0]]
-        self.hdc = hdc
-
-        plotter_objects = self.plotter_type_map[self.hdc.sensor_type]
+        plotter_objects = self.plotter_type_map[hobo_data_type]
         self.num_canvases = len(plotter_objects)
 
         for item in plotter_objects:
             self.canvas_list.append(MplCanvas(parent=self.parent,color=self.color))
             self.plotters.append(item)
-            self.plotters[-1].plot(self.canvas_list[-1],hdc=self.hdc)
-        
+
+    def update_plots(self,hdc):
+        self.hdc = hdc
+        for i,plotter in enumerate(self.plotters):
+            plotter.plot(self.canvas_list[i],hdc=self.hdc)
         self.view_canvas(1)
 
     def update_curr_plot_params(self,parameter_collection):

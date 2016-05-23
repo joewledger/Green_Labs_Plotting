@@ -134,8 +134,12 @@ class Main_Controller():
     def recieve_data_container(self,hdc):
         self.app.hobo_data_container = hdc
         self.ui.program_status.setText("Generating Graphs")
-        self.canvas_collection.update_hobo_data_container(self.app.hobo_data_container)
+        self.canvas_collection.initialize_plotters_and_canvases(hdc.sensor_type)
+        thread = threading.Thread(target=self.update_plots)
+        thread.start()
         
+    def update_plots(self):
+        self.canvas_collection.update_plots(self.app.hobo_data_container)
         self.app.curr_graph = 1
         self.app.graph_count = self.canvas_collection.num_canvases
         self.set_graph_count()
