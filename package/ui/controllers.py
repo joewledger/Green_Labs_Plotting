@@ -1,4 +1,4 @@
-from package.utils import fileUtils
+from package.utils import dialog_utils
 from package.plotting import plotting as plt
 import package.utils.param_utils as param_utils
 
@@ -37,14 +37,17 @@ class Main_Controller():
 
     def recieve_save(self):
         #If there are any canvases besides the blank canvas
+        save_error_window_title = "Save error"
+        save_error_message = "No save location selected"
+
         if(not self.canvas_collection.num_canvases >= 1):
-            self.save_error("No graphs to save")
+            dialog_utils.messageDialog(save_error_window_title,save_error_message)
         elif(not self.app.save_directory):
-            self.save_error("No save location selected")
+            dialog_utils.messageDialog(save_error_window_title,save_error_message)
         elif(self.ui.save_file.text() == ""):
-            self.save_error("No save file selected")
+            dialog_utils.messageDialog(save_error_window_title,save_error_message)
         elif(not self.determine_save_format()):
-            self.save_error("No save format selected")
+            dialog_utils.messageDialog(save_error_window_title,save_error_message)
         else:
             save_format = self.determine_save_format()
             save_file = self.ui.save_file.text()
@@ -52,6 +55,7 @@ class Main_Controller():
             save_directory = self.ui.display_save_loc.text()
             save_location = "%s/%s" % (save_directory,save_file)
             self.canvas_collection.save_current(save_location)
+            dialog_utils.messageDialog("Save confirmation","Image successfully saved.")
 
     def recieve_edit_graph(self):
         curr_plotter = self.canvas_collection.get_current_plotter()
@@ -71,24 +75,18 @@ class Main_Controller():
     def recieve_graph_changes(self,parameter_collection):
         self.canvas_collection.update_curr_plot_params(parameter_collection)
 
-    def save_error(self,message):
-        msg = QMessageBox()
-        msg.setWindowTitle("Save Error")
-        msg.setText(message)
-        msg.exec_()
-
     def determine_save_format(self):
         for radio_button in self.ui.groupBox.children():
             if(radio_button.isChecked()):
                 return radio_button.text()
 
     def recieve_file_selection(self):
-        file = fileUtils.fileDialog()
+        file = dialog_utils.fileDialog()
         self.ui.file_display.setText(file)
         self.app.working_file = file
 
     def recieve_save_loc_selection(self):
-        save_directory = fileUtils.directoryDialog()
+        save_directory = dialog_utils.directoryDialog()
         self.ui.display_save_loc.setText(save_directory)
         self.app.save_directory = save_directory
 
@@ -136,7 +134,6 @@ class Main_Controller():
     def recieve_data_container(self,hdc):
         self.app.hobo_data_container = hdc
         self.ui.program_status.setText("Generating Graphs")
-        #self.canvas_collection.update_canvases(self.app.hobo_data_container)
         self.canvas_collection.update_hobo_data_container(self.app.hobo_data_container)
         
         self.app.curr_graph = 1

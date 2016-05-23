@@ -10,3 +10,14 @@ def directoryDialog():
 	dialog = QFileDialog()
 	directory = dialog.getExistingDirectory()
 	return directory
+
+def messageDialog(window_title,message):
+    msg = QMessageBox()
+    msg.setWindowTitle(window_title)
+    msg.setText(message)
+    msg.exec_()
+
+def colorDialog():
+	dialog = QColorDialog()
+	color = dialog.getColor()
+	return color

@@ -51,7 +51,7 @@ class Ui_MainWindow(object):
         self.label_5.setGeometry(QtCore.QRect(10, 0, 72, 16))
         self.label_5.setObjectName("label_5")
         self.graph_count = QtWidgets.QLabel(self.centralWidget)
-        self.graph_count.setGeometry(QtCore.QRect(90, 0, 16, 16))
+        self.graph_count.setGeometry(QtCore.QRect(90, 0, 51, 16))
         self.graph_count.setObjectName("graph_count")
         self.select_save_loc = QtWidgets.QPushButton(self.centralWidget)
         self.select_save_loc.setGeometry(QtCore.QRect(830, 100, 151, 31))

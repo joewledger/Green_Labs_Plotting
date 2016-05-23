@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy
-import package.utils.exceptions as ex
 import numpy as np
 
 class HoboDataContainer():

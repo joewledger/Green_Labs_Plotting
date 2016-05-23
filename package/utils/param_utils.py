@@ -1,3 +1,5 @@
+from copy import *
+
 #Takes a dictionary mapping Parameter Expectation objects to their default values
 class Parameter_Collection():
 
@@ -47,21 +49,33 @@ class Parameter_Collection():
 
     def __copy__(self):
         new = type(self)(self.param_dict)
-        new.__dict__.update(sekf.__dict__)
+        new.__dict__.update(self.__dict__)
         return new
 
 
 class Parameter_Expectation():
 
-    def __init__(self,param_name,param_type):
+    def __init__(self,param_name,param_type_wrapper):
         self.param_name = param_name
-        self.param_type = param_type
+        self.param_type_wrapper = param_type_wrapper
 
     def copy_new_list_length(self,n):
-        return Parameter_Expectation(self.param_name,self.param_type.copy_new_list_length(n))
+        try:
+            return Parameter_Expectation(self.param_name,self.param_type_wrapper.copy_new_list_length(n))
+        except:
+            return self
+
+    def get_type(self):
+        return self.param_type_wrapper._type
+
+    def is_list(self):
+        return self.param_type_wrapper.is_list
 
     def __str__(self):
         return self.param_name
+
+    def __len__(self):
+        return self.param_type_wrapper.length
 
 class Param_Type_Wrapper():
 
@@ -71,4 +85,4 @@ class Param_Type_Wrapper():
         self.length = length
 
     def copy_new_list_length(self,n):
-        return Param_Type_Wrapper(self._type, is_list=self.is_list,length=n)
+        return Param_Type_Wrapper(self._type, is_list=True,length=n)
