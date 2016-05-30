@@ -14,7 +14,6 @@ from datetime import timedelta
 import numpy as np
 
 import package.hobo_processing.hobo_file_reader as hfr
-import package.hobo_processing.sensor_processing as sp
 import package.utils.param_utils as param_utils
 from collections import *
 
@@ -37,15 +36,22 @@ class CanvasCollection():
     def initialize_plotter_type_map(self):
         self.plotter_type_map = {
                                  "state" : [State_Bar_Chart_Plotter()],
-                                 "light" : [Light_Occupancy_Pie_Chart_Plotter(),
-                                            Light_Occupancy_Pie_Chart_Quad_Plotter()],
-                                 "power" : [],
+                                 "light" : self.initialize_light_plotters(),
+                                 "power" : self.initialize_power_plotters(),
                                  "temp" : [Generic_Hourly_Average_Plotter("Temp, °F")]
                                 }
                                 
+
+    def initialize_light_plotters(self):
+        plotters = [Light_Occupancy_Pie_Chart_Plotter(i) for i in range(0,len(Plotter.subset_functions))]
+        plotters.append(Light_Occupancy_Pie_Chart_Quad_Plotter())
+        return plotters
+
+    def initialize_power_plotters(self):
         power_columns = hfr.HoboDataContainer.legal_columns["power"]
-        for column in power_columns:
-            self.plotter_type_map["power"].append(Generic_Hourly_Average_Plotter(column))
+        plotters = [Generic_Hourly_Average_Plotter(column) for column in power_columns]
+        return plotters
+
 
     def initialize_blank_canvas_and_plotter(self):
         self.canvas_list.append(MplCanvas(parent=self.parent,color=self.color))
@@ -114,18 +120,32 @@ class MplCanvas(FigureCanvas):
 
 class Plotter():
 
+    subset_functions = OrderedDict([(lambda hdc : hdc, "Entire Study Period"),
+                                    (lambda hdc : hdc.buisness_hours().weekdays(), "Weekdays during Buisness Hours"),
+                                    (lambda hdc : hdc.non_buisness_hours().weekdays(), "Weekdays during Non-Buisness Hours"),
+                                    (lambda hdc : hdc.buisness_hours().weekends(), "Weekends during Buisness Hours"),
+                                    (lambda hdc : hdc.non_buisness_hours().weekends(), "Weekends during Non-Buisness Hours")])
+
+
     def __init__(self):
         self.parameters = self.get_default_parameters()
+        
 
     def get_default_parameters(self):
         return param_utils.Parameter_Collection(OrderedDict([]))
 
     def plot(self,canvas,hdc=None):
-        self.plotting_function(canvas.figure,hdc=hdc)
+        try:
+            self.plotting_function(canvas.figure,hdc=hdc)
+        except:
+            self.blank_canvas(canvas.figure)
         canvas.draw()
 
     def plotting_function(self,figure,hdc=None):
+        self.blank_canvas(figure)
+        
 
+    def blank_canvas(self,figure):
         axes = self.get_axes(figure)
         axes.get_xaxis().set_visible(False)
         axes.get_yaxis().set_visible(False)
@@ -152,8 +172,7 @@ class State_Bar_Chart_Plotter(Plotter):
     def plotting_function(self,figure,hdc=None):
     
         axes = self.get_axes(figure)
-        obdp = sp.ObservationBasedDataProcessing(hdc)
-        closed_percentage = obdp.series_time_percentage('State')
+        closed_percentage = hdc.series_time_percentage('State')
         open_percentage = 1 - closed_percentage
         width = .2
         x_pos = np.arange(2)
@@ -168,96 +187,91 @@ class State_Bar_Chart_Plotter(Plotter):
 
 class Light_Occupancy_Pie_Chart_Plotter(Plotter):
 
-    def __init__(self):
+    def __init__(self,n):
         self.color_param = color_param.copy_new_list_length(4)
+        self.hdc_labels = ['Light On & Occ', 'Light On & Unocc', 'Light Off & Occ', 'Light Off & Unocc']
+        self.graph_labels = ["Light on &\nOccupied","Light on &\nUnoccupied","Light off &\nOccupied","Light off &\nUnoccupied"]
+        self.base_title = "Lighting Patterns"
+        self.title_gen = lambda n : "%s, %s" % (self.base_title, list(self.subset_functions.values())[n])
+        self.subset_index = n
+        
         Plotter.__init__(self)
 
     def get_default_parameters(self):
-        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Lighting Patterns"),
+        return param_utils.Parameter_Collection(OrderedDict([(title_param, self.title_gen(self.subset_index)),
                                                              (self.color_param,[QColor(Qt.yellow),QColor(Qt.red),QColor(Qt.blue),QColor(Qt.green)])]))
 
     def plotting_function(self,figure,hdc=None,params=None):
         axes = self.get_axes(figure)
+        self.subset_pie_chart(axes,hdc,self.parameters[title_param],self.graph_labels,subset_func = list(self.subset_functions.keys())[self.subset_index])
 
-        colors = self.parameters[self.color_param]
 
-        color = lambda i : colors[i].name()
+    def subset_pie_chart(self,axes,hdc,title,labels,subset_func= lambda hdc : hdc):
+        
+        copy_hdc = subset_func(hdc)
 
-        labels = {"Light On & Occ" : "Light on &\nOccupied",
-                  "Light On & Unocc" : "Light on &\nUnoccupied",
-                  "Light Off & Occ" : "Light off &\nOccupied",
-                  "Light Off & Unocc" : "Light off &\nUnoccupied"}
+        colors = [c.name() for c in self.parameters[self.color_param]]
+        percentages = [copy_hdc.series_time_percentage(x) for x in self.hdc_labels]
 
-        colors = {"Light On & Occ" : color(0),
-                  "Light On & Unocc" : color(1),
-                  "Light Off & Occ" : color(2),
-                  "Light Off & Unocc" : color(3)}
+        patches,texts = axes.pie(percentages,labels=labels,colors=colors)
 
-        obdp = sp.ObservationBasedDataProcessing(hdc)
-
-        percentages = {x : obdp.series_time_percentage(x) for x in labels.keys()}
-
-        self.pie_chart(axes,percentages,labels,colors)
-
-    def pie_chart(self,axes,percentages,labels,colors):
-        patches,text = axes.pie(list(percentages.values()),labels=list(labels.values()),colors=list(colors.values()))
-
-        for t in text:
+        for t in texts:
             t.set_fontsize(8)
 
         axes.set_aspect(1)
-        axes.set_title(self.parameters[title_param])
+        axes.set_title(title,fontsize=12)
+
+        return patches,texts
 
 
-class Light_Occupancy_Pie_Chart_Quad_Plotter(Plotter):
+class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
 
     def __init__(self):
-        Plotter.__init__(self)
-
+        self.subplot_titles = title_param.copy_new_list_length(4)
+        Light_Occupancy_Pie_Chart_Plotter.__init__(self,0)
+        
     def get_default_parameters(self):
-        return param_utils.Parameter_Collection(OrderedDict([]))
+        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Lighting Patterns"),
+                                                             (self.color_param,[QColor(Qt.yellow),QColor(Qt.red),QColor(Qt.blue),QColor(Qt.green)]),
+                                                             (self.subplot_titles,["Weekdays, Buisness Hours","Weekdays, Non Buisness Hours","Weekends, Buisness Hours","Weekends, Non Buisness Hours"])]))
 
     def plotting_function(self,figure,hdc=None,params=None):
-        colors = ["orange","red","green","grey"]
-        legend_labels = ["Light on &\nOccupied","Light on &\nUnoccupied","Light off &\nOccupied","Light off &\nUnoccupied"]
 
+        colors = [c.name() for c in self.parameters[self.color_param]]
+        subplot_titles = self.parameters[self.subplot_titles]
 
-        ax1 = figure.add_subplot(2,2,1)
-        ax2 = figure.add_subplot(2,2,2)
-        ax3 = figure.add_subplot(2,2,3)
-        ax4 = figure.add_subplot(2,2,4)
+        axes = [figure.add_subplot(2,2,x) for x in range(1,5)]
 
-        titles = {ax1 : "Weekdays, Buisness Hours", ax2 : "Weekdays, Non Buisness Hours", ax3 : "Weekends, Buisness Hours", ax4 : "Weekends, Non Buisness Hours"}
+        invisible_labels = ["" for x in range(0,4)]
 
-        for ax in [ax1,ax2,ax3,ax4]:
+        for i,ax in enumerate(axes):
 
-            patches,texts = ax.pie([.25,.25,.25,.25],colors=colors)
-            ax.set_aspect(1)
-            ax.set_title(titles[ax])
-        figure.legend(patches,labels=legend_labels,loc='upper left',prop={'size':10})
+            subset_func = list(self.subset_functions.keys())[i + 1]
+            patches,texts = self.subset_pie_chart(ax,hdc,subplot_titles[i],invisible_labels,subset_func = subset_func)
 
-        ax1.set_aspect(1)
-        ax1.set_title("Buisness Hours")
-        figure.suptitle("Thinkbox Light Usage Patterns",fontsize=16)
+        figure.legend(patches,labels=self.graph_labels,loc='upper left',prop={'size':8})
+
+        figure.suptitle(self.parameters[title_param],fontsize=16)
 
 class Generic_Hourly_Average_Plotter(Plotter):
 
     def __init__(self,column_name):
-        Plotter.__init__(self)
         self.column_name = column_name
+        Plotter.__init__(self)
+        
 
     def get_default_parameters(self):
-        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Average Hourly Value"),
+        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Average Hourly %s" % self.column_name),
                                                              (x_label_param, "Time"),
-                                                             (y_label_param, "Value")]))
+                                                             (y_label_param, self.column_name),
+                                                             (color_param, QColor(Qt.green))]))
 
     def plotting_function(self,figure,hdc=None,params=None):
         
         axes = self.get_axes(figure)
-        ibdp = sp.IntervalBasedDataProcessing(hdc)
 
-        hourly_averages = ibdp.interval_averages(self.column_name,pd.Timedelta('1 hours'))
-        hourly_std = ibdp.interval_std(self.column_name,pd.Timedelta('1 hours'))
+        hourly_averages = hdc.interval_averages(self.column_name,pd.Timedelta('1 hours'))
+        hourly_std = hdc.interval_std(self.column_name,pd.Timedelta('1 hours'))
 
         dates = pd.to_datetime(hourly_averages.index).strftime("%m/%d %I %p")
         indices = [x for x in range(0,len(dates))]
@@ -266,7 +280,7 @@ class Generic_Hourly_Average_Plotter(Plotter):
         stds = list(hourly_std.values)
 
 
-        axes.plot(indices,means)
+        axes.plot(indices,means,color=self.parameters[color_param].name())
         axes.errorbar(indices,means,stds)
         axes.set_xlabel(self.parameters[x_label_param])
         axes.set_ylabel(self.parameters[y_label_param])
@@ -283,6 +297,7 @@ class Generic_Hourly_Average_Plotter(Plotter):
         axes.set_title(self.parameters[title_param])
 
 title_param = param_utils.Parameter_Expectation("Title",param_utils.Param_Type_Wrapper(str))
+label_param = param_utils.Parameter_Expectation("Label",param_utils.Param_Type_Wrapper(str))
 x_label_param = param_utils.Parameter_Expectation("X-Axis Label", param_utils.Param_Type_Wrapper(str))
 y_label_param = param_utils.Parameter_Expectation("Y-Axis Label", param_utils.Param_Type_Wrapper(str))
 color_param = param_utils.Parameter_Expectation("Color", param_utils.Param_Type_Wrapper(type(QColor())))

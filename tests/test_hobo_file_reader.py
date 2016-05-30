@@ -1,6 +1,7 @@
 import package.hobo_processing.hobo_file_reader as hfr
-import pandas
+import pandas as pd
 import numpy as np
+import math
 
 def test_trim_data():
 
@@ -127,19 +128,51 @@ def test_infer_date_range():
     hdc.trim_data()
     hdc.infer_date_range()
 
-    is_timestamp = lambda ts : type(ts) == pandas.tslib.Timestamp
+    is_timestamp = lambda ts : type(ts) == pd.tslib.Timestamp
 
     date_range = hdc.date_range
     assert is_timestamp(date_range[0]) and is_timestamp(date_range[1])
     pass
 
-def test_import_datafile():
-    hdc = hfr.HoboDataContainer()
 
-    #hdc.import_datafile("sample_data/sample_light_data.csv") 
-    #print(hdc.dataframe)
+def test_interval_averages():
+    hdc = read_file("sample_data/sample_temperature_data_truncated.csv")
+    start_time = pd.Timestamp("2/25/2016 10:45:23 AM")
+    end_time = pd.Timestamp("2/25/2016 10:47:53 AM")
+    print(hdc.interval_averages('Temp, °F',pd.Timedelta('1 minutes'),start_time=start_time,end_time=end_time))
+    print(hdc.interval_std('Temp, °F',pd.Timedelta('1 minutes'),start_time=start_time,end_time=end_time))
 
-    hdc.import_datafile("sample_data/sample_temperature_data.csv") 
+def test_closest_timestamp():
+    
+    hdc = read_file("sample_data/sample_temperature_data_truncated.csv")
+
+    assert math.isnan(hdc.get_closest_timestamp(pd.Timestamp("2/25/2016 10:43:00 AM")))
+    assert hdc.get_closest_timestamp(pd.Timestamp("2/25/2016 10:44:53 AM")) == pd.Timestamp("2/25/2016 10:44:53 AM")
+    assert hdc.get_closest_timestamp(pd.Timestamp("2/25/2016 10:45:00 AM")) == pd.Timestamp("2/25/2016 10:44:53 AM")
+    assert math.isnan(hdc.get_closest_timestamp(pd.Timestamp("2/25/2016 10:45:00 AM"),before=False))
+    pass
+
+def test_buisness_hours():
+    hdc = read_file("sample_data/sample_temperature_data_truncated4.csv")
+    hdc.buisness_hours(inplace=True)
     print(hdc.dataframe)
 
+def test_non_buisness_hours():
+    hdc = read_file("sample_data/sample_temperature_data_truncated4.csv")
+    hdc.non_buisness_hours(inplace=True)
+    print(hdc.dataframe)
 
+def test_weekdays():
+    hdc = read_file("sample_data/sample_temperature_data_truncated4.csv")
+    hdc.weekdays(inplace=True)
+    print(hdc.dataframe)
+
+def test_weekends():
+    hdc = read_file("sample_data/sample_temperature_data_truncated4.csv")
+    hdc.weekends(inplace=True)
+    print(hdc.dataframe)
+
+def read_file(filename):
+    hdc = hfr.HoboDataContainer()
+    hdc.import_datafile(filename)
+    return hdc

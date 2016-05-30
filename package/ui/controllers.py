@@ -139,10 +139,13 @@ class Main_Controller():
         thread.start()
         
     def update_plots(self):
-        self.canvas_collection.update_plots(self.app.hobo_data_container)
-        self.app.curr_graph = 1
-        self.app.graph_count = self.canvas_collection.num_canvases
-        self.set_graph_count()
-        self.ui.program_status.setText("Done Generating Graphs")
-        self.ui.save_status.setText("Unsaved graphs")
+        try:
+            self.canvas_collection.update_plots(self.app.hobo_data_container)
+            self.app.curr_graph = 1
+            self.app.graph_count = self.canvas_collection.num_canvases
+            self.set_graph_count()
+            self.ui.program_status.setText("Done Generating Graphs")
+            self.ui.save_status.setText("Unsaved graph")
+        except:
+            self.ui.program_status("Failed to generate plots")
         self.ui.generate_graphs.setEnabled(True)

@@ -11,17 +11,20 @@ def test_light_occupancy_pie_chart_single():
     hdc = hfr.HoboDataContainer()
     hdc.import_datafile("sample_data/sample_light_data_truncated.csv")
 
-    plotting.light_occupancy_pie_chart_single(fig,hdc=hdc)
+    plotter = plotting.Light_Occupancy_Pie_Chart_Plotter()
+    plotter.plotting_function(fig,hdc=hdc)
+
     plt.show()
 
 def test_light_occupancy_pie_chart_quad():
     fig = plt.figure()
 
     hdc = hfr.HoboDataContainer()
-    hdc.import_datafile("sample_data/sample_light_data_truncated.csv")
+    hdc.import_datafile("sample_data/sample_light_data.csv")
 
-    plotting.light_occupancy_pie_chart_quad(fig,hdc=hdc)
-    #print(fig.canvas.get_supported_filetypes())
+    plotter = plotting.Light_Occupancy_Pie_Chart_Quad_Plotter()
+    plotter.plotting_function(fig,hdc=hdc)
+
     plt.show()
 
 def test_temp_avg_hourly_std_dev():

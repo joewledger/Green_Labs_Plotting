@@ -29,7 +29,6 @@ class HoboDataContainer():
     def import_datafile(self,datafile):
 
         self.filename = datafile
-
         try:
             self.dataframe = self.read_data(datafile)
             self.trim_data()
@@ -38,17 +37,23 @@ class HoboDataContainer():
             self.valid_datafile = False
 
         if(self.valid_datafile):
-            self.infer_sensor_type()
-            self.fields = self.dataframe.columns
-            self.infer_boolean_data()
-            if(self.boolean_valued):
-                self.convert_boolean_data()
-            self.infer_even_time_increments()
-            self.infer_missing_values()
-            self.infer_date_range()
-            self.infer_total_time()
-        
+            self.update_fields()
 
+    def update_fields(self):
+        self.infer_sensor_type()
+        self.fields = self.dataframe.columns
+        self.infer_boolean_data()
+        if(self.boolean_valued):
+            self.convert_boolean_data()
+        self.infer_even_time_increments()
+        self.infer_missing_values()
+        self.infer_date_range()
+        self.infer_total_time()
+
+    def update_dataframe(self,update_func):
+        self.dataframe = update_func(self.dataframe)
+        self.update_fields()
+        
     def read_data(self,datafile):
         return pd.read_csv(datafile,header=1,index_col=1,parse_dates=True)
 
@@ -141,16 +146,134 @@ class HoboDataContainer():
 
     def infer_even_time_increments(self):
         index = list(self.dataframe.index)
-        first_diff = index[1] - index[0]
-        self.even_time_increments = all(index[i] - index[i-1] == first_diff for i in range(2,len(index)))
-
+        if(len(index) > 1):
+            first_diff = index[1] - index[0]
+            self.even_time_increments = all(index[i] - index[i-1] == first_diff for i in range(2,len(index)))
+        else:
+            self.even_time_increments = False
 
     def infer_missing_values(self):
         self.missing_values = self.dataframe.isnull().any()
 
     def infer_date_range(self):
         index = self.dataframe.index
-        self.date_range = index[0],index[-1]
+        if(len(index) > 1):
+            self.date_range = index[0],index[-1]
+        else:
+            self.date_range = None
 
     def infer_total_time(self):
-        self.total_time = pd.Timedelta(self.date_range[1] - self.date_range[0])
+        if(self.date_range):
+            self.total_time = pd.Timedelta(self.date_range[1] - self.date_range[0])
+        else:
+            self.total_time = None
+
+
+    def buisness_hours(self,inplace=False,start_time='9:00',end_time='17:00'):
+        dataframe = self.dataframe
+        integer_index = dataframe.index.indexer_between_time(start_time,end_time)
+        copy_dataframe = dataframe.iloc[integer_index]
+
+        return self._updated_object(copy_dataframe,inplace=inplace)
+
+    def non_buisness_hours(self,inplace=False,start_time='9:00',end_time='17:00'):
+        dataframe = self.dataframe
+        integer_index = dataframe.index.indexer_between_time(start_time,end_time)
+        buisness_hours_labels = dataframe.index[integer_index]
+        copy_dataframe = dataframe.drop(buisness_hours_labels)
+
+        return self._updated_object(dataframe,inplace=inplace)
+
+    def weekdays(self,inplace=False,start_day=0,end_day=5):
+        dataframe = self._get_filtered_dataframe_by_weekday_status(lambda x : x in range(start_day,end_day))
+        return self._updated_object(dataframe,inplace=inplace)
+
+    def weekends(self,inplace=False,start_day=0,end_day=5):
+        dataframe = self._get_filtered_dataframe_by_weekday_status(lambda x : x not in range(start_day,end_day))
+        return self._updated_object(dataframe,inplace=inplace)
+
+    def _get_filtered_dataframe_by_weekday_status(self,filter_func):
+        dataframe = self.dataframe
+        weekday = [filter_func(x) for x in dataframe.index.weekday]
+        copy_dataframe = dataframe.ix[weekday]
+        return copy_dataframe
+
+
+    def _updated_object(self,dataframe,inplace=False):
+
+        object = (self if inplace else HoboDataContainer())
+        object.dataframe = dataframe
+        object.update_fields()
+        return object
+
+    #Gets the start and end times closest to the provided start and end times in the dataframe
+    #For the start time, it looks for the closest time before if there isn't an exact match
+    #For the end time, it looks for the closest time after if there isn't an exact match
+    #If either start_time or end_time are None, the start and end times of the entire dataframe are used
+    def get_closest_start_end_times(self,start_time,end_time):
+
+        if(start_time):
+            closest_start = self.get_closest_timestamp(start_time)
+        else:
+            closest_start = self.hdc.date_range[0]
+
+        if(end_time):
+            closest_end = self.get_closest_timestamp(end_time,before=False)
+        else:
+            closest_end = self.hdc.date_range[1]
+
+        return closest_start,closest_end
+
+    #Returns the closest timestamp in the Hobo Data Container to the provided timestamp.
+    #If there is an exact match, the exact match will be returned.
+    #Otherwise:
+    #   If the before flag is True, return the closest timestamp BEFORE the provided timestamp
+    #   If the before flag is False, return the closest timestamp AFTER the provided timestamp
+    #Returns nan if before is specified and there are no values before,
+    #or if after is specified and there are no values after
+    def get_closest_timestamp(self,time_stamp,before=True):
+        if(time_stamp in self.hdc.dataframe.index):
+            return time_stamp
+        else:
+            if(before):
+                return self.hdc.dataframe.index.asof(time_stamp)
+            else:
+                prev = self.hdc.dataframe.index.asof(time_stamp)
+                try:
+                    location = self.hdc.dataframe.index.get_loc(prev)
+                    return hdc.dataframe.iloc[location + 1]
+                except:
+                    return math.nan
+
+    #Defined for Observation based data
+    #Gives the percentage of time that an observation is True
+    def series_time_percentage(self,series_name):
+        time = pd.Timedelta('0 days')
+
+        series = self.dataframe[series_name]
+        time_stamps = pd.Series(series.index)
+        time_differences = time_stamps.diff(periods=1).shift(periods=-1).fillna(pd.Timedelta('0 days'))
+
+        for i,x in enumerate(series):
+            if(x):
+                time += time_differences[i]
+        return time / self.total_time
+
+    #Defined for Interval based data
+    #Calculates a statistic for a column of data in a given time range
+    def calculate_interval_statistic(self,series_name,interval_length,resampler,start_time=None,end_time=None):
+        closest_start,closest_end = self.get_closest_start_end_times(start_time,end_time)
+        dataframe = self.dataframe.ix[start_time:end_time]
+        series = dataframe[series_name]
+        return series.resample(interval_length).apply(resampler)
+
+    def interval_averages(self, series_name, interval_length,start_time=None,end_time=None):
+        mean = lambda array_like : np.mean(array_like)
+        return self.calculate_interval_statistic(series_name, interval_length,mean,start_time=start_time,end_time=end_time)
+
+    def interval_std(self, series_name, interval_length,start_time=None,end_time=None):
+        std_dev = lambda array_like : np.std(array_like)
+        return self.calculate_interval_statistic(series_name, interval_length,std_dev,start_time=start_time,end_time=end_time)
+
+    def __str__(self):
+        return self.dataframe.__str__()
