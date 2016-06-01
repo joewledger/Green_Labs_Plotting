@@ -82,9 +82,20 @@ class CanvasCollection():
 
     def update_plots(self,hdc):
         self.hdc = hdc
+        faulty_plotters = []
         for i,plotter in enumerate(self.plotters):
-            plotter.plot(self.canvas_list[i],hdc=self.hdc)
+            try:
+                plotter.plot(self.canvas_list[i],hdc=self.hdc)
+            except:
+                faulty_plotters.append(i)
+        self.remove_faulty_plotters(faulty_plotters)
         self.view_canvas(1)
+
+    def remove_faulty_plotters(self,faulty_plotters):
+        for index in reversed(faulty_plotters):
+            del(self.canvas_list[index])
+            del(self.plotters[index])
+            self.num_canvases -= 1
 
     def update_curr_plot_params(self,parameter_collection):
         curr_canvas = self.get_current_canvas()
@@ -143,10 +154,7 @@ class Plotter():
         return param_utils.Parameter_Collection(OrderedDict([]))
 
     def plot(self,canvas,hdc=None):
-        try:
-            self.plotting_function(canvas.figure,hdc=hdc)
-        except:
-            self.blank_canvas(canvas.figure)
+        self.plotting_function(canvas.figure,hdc=hdc)
         canvas.draw()
 
     def plotting_function(self,figure,hdc=None):
@@ -209,7 +217,7 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
         return param_utils.Parameter_Collection(OrderedDict([(title_param, self.title_gen(self.subset_index)),
                                                              (self.color_param,[QColor(Qt.yellow),QColor(Qt.red),QColor(Qt.blue),QColor(Qt.green)])]))
 
-    def plotting_function(self,figure,hdc=None,params=None):
+    def plotting_function(self,figure,hdc=None):
         axes = self.get_axes(figure)
         subset_function = list(self.subset_functions.keys())[self.subset_index]
         patches,texts = self.subset_pie_chart(axes,hdc,self.parameters[title_param],self.graph_labels,subset_func = subset_function)
@@ -226,8 +234,6 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
         patches,texts,autotexts = axes.pie(percentages,labels=labels,autopct='%1.1f%%',colors=colors,startangle=90)
         for patch,autotext in zip(patches,autotexts):
             self.reposition_autotext(patch,autotext,autopct_dist)
-
-        #patches,texts = axes.pie(percentages,labels=labels,colors=colors,startangle=90)
 
         for t in texts:
             t.set_fontsize(8)
@@ -266,7 +272,7 @@ class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
                                                              (self.color_param,[QColor(Qt.yellow),QColor(Qt.red),QColor(Qt.blue),QColor(Qt.green)]),
                                                              (self.subplot_titles,["Weekdays, Buisness Hours","Weekdays, Non Buisness Hours","Weekends, Buisness Hours","Weekends, Non Buisness Hours"])]))
 
-    def plotting_function(self,figure,hdc=None,params=None):
+    def plotting_function(self,figure,hdc=None):
 
         colors = [c.name() for c in self.parameters[self.color_param]]
         subplot_titles = self.parameters[self.subplot_titles]
@@ -297,7 +303,7 @@ class Generic_Hourly_Average_Plotter(Plotter):
                                                              (y_label_param, self.column_name),
                                                              (color_param, QColor(Qt.green))]))
 
-    def plotting_function(self,figure,hdc=None,params=None):
+    def plotting_function(self,figure,hdc=None):
         
         axes = self.get_axes(figure)
 
@@ -342,7 +348,7 @@ class Generic_Scatter_Plotter(Plotter):
                                                              (y_label_param, self.columns[1]),
                                                              (color_param, QColor(Qt.green))]))
 
-    def plotting_function(self,figure,hdc=None,params=None):
+    def plotting_function(self,figure,hdc=None):
 
         axes = self.get_axes(figure)
 
@@ -354,8 +360,29 @@ class Generic_Scatter_Plotter(Plotter):
         axes.set_ylabel(self.parameters[y_label_param])
         axes.set_title(self.parameters[title_param])
 
+class Generic_Subinterval_Bar_Chart_Plotter(Plotter):
 
+    def __init__(self,columns):
+        self.columns = columns
+        Plotter.__init__(self)
 
+    def get_default_parameters(self):
+        return None
+
+    def plotting_function(self,figure,hdc=None):
+        return None
+
+class Generic_Hourly_Average_Bar_Chart_Plotter(Plotter):
+
+    def __init__(self,columns):
+        self.columns = columns
+        Plotter.__init__(self)
+
+    def get_default_parameters(self):
+        return None
+
+    def plotting_function(self,figure,hdc=None):
+        return None
 
 title_param = param_utils.Parameter_Expectation("Title",param_utils.Param_Type_Wrapper(str))
 label_param = param_utils.Parameter_Expectation("Label",param_utils.Param_Type_Wrapper(str))
