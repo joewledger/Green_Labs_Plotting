@@ -16,6 +16,7 @@ import numpy as np
 import package.hobo_processing.hobo_file_reader as hfr
 import package.utils.param_utils as param_utils
 from collections import *
+import itertools
 
 class CanvasCollection():
 
@@ -55,6 +56,8 @@ class CanvasCollection():
     def initialize_temp_plotters(self):
         temp_columns = hfr.HoboDataContainer.legal_columns["temp"]
         plotters = [Generic_Hourly_Average_Plotter(column) for column in temp_columns]
+        scatter_plots = [Generic_Scatter_Plotter(list(x)) for x in itertools.combinations(temp_columns,2)]
+        plotters.extend(scatter_plots)
         return plotters
 
 
@@ -325,6 +328,34 @@ class Generic_Hourly_Average_Plotter(Plotter):
         axes.set_xlim([0,len(indices)])
         figure.tight_layout()
         axes.set_title(self.parameters[title_param])
+
+class Generic_Scatter_Plotter(Plotter):
+
+    def __init__(self,columns):
+        self.columns = columns
+        Plotter.__init__(self)
+
+    def get_default_parameters(self):
+        default_title = "Scatter Plot: %s vs %s" % (self.columns[0],self.columns[1])
+        return param_utils.Parameter_Collection(OrderedDict([(title_param, default_title),
+                                                             (x_label_param, self.columns[0]),
+                                                             (y_label_param, self.columns[1]),
+                                                             (color_param, QColor(Qt.green))]))
+
+    def plotting_function(self,figure,hdc=None,params=None):
+
+        axes = self.get_axes(figure)
+
+        averages = [hdc.interval_averages(c,pd.Timedelta('1 hours')) for c in self.columns]
+
+        axes.scatter(averages[0],averages[1],color=self.parameters[color_param].name())
+
+        axes.set_xlabel(self.parameters[x_label_param])
+        axes.set_ylabel(self.parameters[y_label_param])
+        axes.set_title(self.parameters[title_param])
+
+
+
 
 title_param = param_utils.Parameter_Expectation("Title",param_utils.Param_Type_Wrapper(str))
 label_param = param_utils.Parameter_Expectation("Label",param_utils.Param_Type_Wrapper(str))

@@ -5,7 +5,22 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 
-def test_generic_temperature():
+def test_generic_scatter_plot():
+
+    fig = plt.figure()
+
+    hdc = hfr.HoboDataContainer()
+    hdc.import_datafile("sample_data/sample_temperature_data_truncated4.csv")
+
+    plotter = plotting.Generic_Scatter_Plotter(['Temp, °F','RH, %'])
+    plotter.plotting_function(fig,hdc=hdc)
+
+    plt.show()
+
+
+
+
+def test_average_temperature():
     fig = plt.figure()
 
     hdc = hfr.HoboDataContainer()
