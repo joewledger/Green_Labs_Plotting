@@ -215,12 +215,12 @@ class HoboDataContainer():
         if(start_time):
             closest_start = self.get_closest_timestamp(start_time)
         else:
-            closest_start = self.hdc.date_range[0]
+            closest_start = self.date_range[0]
 
         if(end_time):
             closest_end = self.get_closest_timestamp(end_time,before=False)
         else:
-            closest_end = self.hdc.date_range[1]
+            closest_end = self.date_range[1]
 
         return closest_start,closest_end
 
@@ -232,16 +232,16 @@ class HoboDataContainer():
     #Returns nan if before is specified and there are no values before,
     #or if after is specified and there are no values after
     def get_closest_timestamp(self,time_stamp,before=True):
-        if(time_stamp in self.hdc.dataframe.index):
+        if(time_stamp in self.dataframe.index):
             return time_stamp
         else:
             if(before):
-                return self.hdc.dataframe.index.asof(time_stamp)
+                return self.dataframe.index.asof(time_stamp)
             else:
-                prev = self.hdc.dataframe.index.asof(time_stamp)
+                prev = self.dataframe.index.asof(time_stamp)
                 try:
-                    location = self.hdc.dataframe.index.get_loc(prev)
-                    return hdc.dataframe.iloc[location + 1]
+                    location = self.dataframe.index.get_loc(prev)
+                    return self.dataframe.iloc[location + 1]
                 except:
                     return math.nan
 

@@ -38,7 +38,7 @@ class CanvasCollection():
                                  "state" : [State_Bar_Chart_Plotter()],
                                  "light" : self.initialize_light_plotters(),
                                  "power" : self.initialize_power_plotters(),
-                                 "temp" : [Generic_Hourly_Average_Plotter("Temp, °F")]
+                                 "temp" : self.initialize_temp_plotters()
                                 }
                                 
 
@@ -50,6 +50,11 @@ class CanvasCollection():
     def initialize_power_plotters(self):
         power_columns = hfr.HoboDataContainer.legal_columns["power"]
         plotters = [Generic_Hourly_Average_Plotter(column) for column in power_columns]
+        return plotters
+
+    def initialize_temp_plotters(self):
+        temp_columns = hfr.HoboDataContainer.legal_columns["temp"]
+        plotters = [Generic_Hourly_Average_Plotter(column) for column in temp_columns]
         return plotters
 
 
@@ -308,13 +313,15 @@ class Generic_Hourly_Average_Plotter(Plotter):
         axes.set_xlabel(self.parameters[x_label_param])
         axes.set_ylabel(self.parameters[y_label_param])
 
-        if(len(indices) > 50):
-            mod_12 = lambda array : [x for i,x in enumerate(array) if i % 12 == 0]
-            indices = mod_12(indices)
-            dates = mod_12(dates)
+        if(len(indices) > 20):
+            n_candidates = (x * 6 for x in range(1,10) if len(indices) / (x * 6) < 20)
+            n = next(n_candidates)
+            mod_n = lambda array,n : [x for i,x in enumerate(array) if i % n == 0]
+            mod_indices = mod_n(indices,n)
+            mod_dates = mod_n(dates,n)
 
-        axes.set_xticks(indices)
-        axes.set_xticklabels(dates,rotation="vertical")
+        axes.set_xticks(mod_indices)
+        axes.set_xticklabels(mod_dates,rotation="vertical")
         axes.set_xlim([0,len(indices)])
         figure.tight_layout()
         axes.set_title(self.parameters[title_param])
