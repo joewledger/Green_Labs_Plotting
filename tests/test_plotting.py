@@ -39,7 +39,7 @@ def test_light_occupancy_pie_chart_single():
     hdc = hfr.HoboDataContainer()
     hdc.import_datafile("sample_data/sample_light_data.csv")
 
-    plotter = plotting.Light_Occupancy_Pie_Chart_Plotter(0)
+    plotter = plotting.Light_Occupancy_Pie_Chart_Plotter(3)
     plotter.plotting_function(fig,hdc=hdc)
 
     plt.show()

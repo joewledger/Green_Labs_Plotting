@@ -223,7 +223,7 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
         patches,texts = self.subset_pie_chart(axes,hdc,self.parameters[title_param],self.graph_labels,subset_func = subset_function)
 
 
-    def subset_pie_chart(self,axes,hdc,title,labels,subset_func= lambda hdc : hdc,autopct_dist=.8):
+    def subset_pie_chart(self,axes,hdc,title,labels,subset_func= lambda hdc : hdc,autopct=True):
         
         copy_hdc = subset_func(hdc)
 
@@ -231,9 +231,12 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
         percentages = [copy_hdc.series_time_percentage(x) for x in self.hdc_labels]
 
 
-        patches,texts,autotexts = axes.pie(percentages,labels=labels,autopct='%1.1f%%',colors=colors,startangle=90)
-        for patch,autotext in zip(patches,autotexts):
-            self.reposition_autotext(patch,autotext,autopct_dist)
+        if(autopct):
+            patches,texts,autotexts = axes.pie(percentages,labels=labels,autopct='%1.1f%%',colors=colors,startangle=90)
+            for patch,text,autotext,percent in zip(patches,texts,autotexts,percentages):
+                self.reposition_texts(patch,text,autotext,percent)
+        else:
+            patches,texts = axes.pie(percentages,labels=labels,colors=colors,startangle=90)
 
         for t in texts:
             t.set_fontsize(8)
@@ -243,22 +246,32 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
 
         return patches,texts
 
-    def reposition_autotext(self,patch,autotext,distance_coef):
+    def reposition_texts(self,patch,text,autotext,percent):
 
-        new_angle = lambda p : (p.theta2 + p.theta1) / 2
-        new_x = lambda p,ang : p.r * distance_coef * np.cos(ang*np.pi / 180)
-        new_y = lambda p,ang : p.r * distance_coef * np.sin(ang*np.pi / 180)
+        text_height = 1.1
+        text_adjust = 8
+        autotext_height = .6
+        autotext_adjust = 15
+
+        angle = lambda p : (p.theta2 + p.theta1) / 2
+        new_x = lambda p,height,adjust : p.r * height * np.cos((angle(p) - adjust)*np.pi / 180)
+        new_y = lambda p,height,adjust : p.r * height * np.sin((angle(p) - adjust)*np.pi / 180)
+        new_position = lambda p,height,adjust : (new_x(p,height,adjust), new_y(p,height,adjust))
         patch_width = lambda p : p.theta2 - p.theta1
 
-        angle = new_angle(patch)
-        x = new_x(patch,angle)
-        y = new_y(patch,angle)
-
         if(patch_width(patch) < 10):
-            x += (patch.r / 8)
+            a_x,a_y = new_position(patch,autotext_height,autotext_adjust)
+            t_x,t_y = new_position(patch,text_height,text_adjust)
 
-        autotext.set_position((x,y))
+            autotext.set_position((a_x,a_y))
+            text.set_position((t_x,t_y))
+
         autotext.set_fontsize(10)
+
+        if(percent < .01):
+            autotext.set_visible(False)
+            text.set_visible(False)
+        
 
 
 class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
@@ -284,7 +297,7 @@ class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
         for i,ax in enumerate(axes):
 
             subset_func = list(self.subset_functions.keys())[i + 1]
-            patches,texts = self.subset_pie_chart(ax,hdc,subplot_titles[i],invisible_labels,subset_func = subset_func,autopct_dist=1.2)
+            patches,texts = self.subset_pie_chart(ax,hdc,subplot_titles[i],invisible_labels,subset_func = subset_func,autopct=False)
 
         figure.legend(patches,labels=self.graph_labels,loc='upper left',prop={'size':8})
 
