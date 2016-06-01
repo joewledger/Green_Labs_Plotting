@@ -303,6 +303,7 @@ class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
 
         figure.suptitle(self.parameters[title_param],fontsize=16)
 
+#Line Plot with Hourly Averages for Interval Based Data
 class Generic_Hourly_Average_Plotter(Plotter):
 
     def __init__(self,column_name):
@@ -314,7 +315,7 @@ class Generic_Hourly_Average_Plotter(Plotter):
         return param_utils.Parameter_Collection(OrderedDict([(title_param, "Average Hourly %s" % self.column_name),
                                                              (x_label_param, "Time"),
                                                              (y_label_param, self.column_name),
-                                                             (color_param, QColor(Qt.green))]))
+                                                             (color_param, QColor(Qt.blue))]))
 
     def plotting_function(self,figure,hdc=None):
         
@@ -329,9 +330,9 @@ class Generic_Hourly_Average_Plotter(Plotter):
         means = list(hourly_averages.values)
         stds = list(hourly_std.values)
 
+        color = self.parameters[color_param].name()
+        axes.errorbar(indices,means,yerr=stds,color=color,ecolor=color)
 
-        axes.plot(indices,means,color=self.parameters[color_param].name())
-        axes.errorbar(indices,means,stds)
         axes.set_xlabel(self.parameters[x_label_param])
         axes.set_ylabel(self.parameters[y_label_param])
 
@@ -373,6 +374,8 @@ class Generic_Scatter_Plotter(Plotter):
         axes.set_ylabel(self.parameters[y_label_param])
         axes.set_title(self.parameters[title_param])
 
+#Subinterval Bar Plot for All Data Types
+#One Bar for each subinterval (so 4 total)
 class Generic_Subinterval_Bar_Chart_Plotter(Plotter):
 
     def __init__(self,columns):
@@ -385,6 +388,8 @@ class Generic_Subinterval_Bar_Chart_Plotter(Plotter):
     def plotting_function(self,figure,hdc=None):
         return None
 
+#Bar Plot with Hourly Averages for Observational Data
+#One Bar for each hour of the day (so 24 total)
 class Generic_Hourly_Average_Bar_Chart_Plotter(Plotter):
 
     def __init__(self,columns):
