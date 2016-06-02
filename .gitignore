@@ -3,6 +3,7 @@
 *.ui
 *.spec
 sample_data/
+sample_plots/
 dist/
 build/
 notes.txt

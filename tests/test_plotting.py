@@ -4,6 +4,18 @@ import package.hobo_processing.hobo_file_reader as hfr
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
+def test_single_bar_subinterval():
+
+    fig = plt.figure()
+    axes = fig.add_subplot(111)
+
+    values = [75.4,76.3,78.2,74.9]
+
+    plotter = plotting.Generic_Bar_Plotter()
+    plotter.single_bar_plot(axes,values)
+
+    plt.show()
+
 
 def test_generic_scatter_plot():
 
@@ -55,16 +67,38 @@ def test_light_occupancy_pie_chart_quad():
 
     plt.show()
 
-def test_temp_avg_hourly_std_dev():
+
+def test_bar_plots():
+    test_state_plot()
+    test_single_bar_subinterval_temperature()
+
+def test_state_plot():
+
+    generic_test_plot("sample_data/sample_state_data.csv",plotting.State_Bar_Chart_Plotter)
+
+def test_single_bar_subinterval_temperature():
+
+    generic_test_plot("sample_data/sample_temperature_data_truncated3.csv",plotting.Single_Bar_Subinterval_Plotter,args='Temp, °F')
+
+    
+
+def generic_test_plot(datafile,class_template,args=None):
 
     fig = plt.figure()
 
     hdc = hfr.HoboDataContainer()
-    hdc.import_datafile("sample_data/sample_temperature_data_truncated4.csv")
+    hdc.import_datafile(datafile)
 
-    plotting.temp_avg_hourly_std_dev(fig,hdc=hdc)
+
+    if(args):
+        plotter = class_template(args)
+    else:
+        plotter = class_template()
+
+    plotter.plotting_function(fig,hdc=hdc)
 
     plt.show()
+
 
 def test_get_supported_filetypes():
 

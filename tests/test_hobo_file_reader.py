@@ -3,6 +3,16 @@ import pandas as pd
 import numpy as np
 import math
 
+def test_series_average():
+
+    hdc = hfr.HoboDataContainer()
+    hdc.import_datafile("sample_data/sample_temperature_data_truncated4.csv")
+
+    assert type(hdc.series_average('Temp, °F')) == np.float64
+    assert type(hdc.series_std('Temp, °F')) == np.float64
+
+
+
 def test_trim_data():
 
     def test_dataframe(filename,col_list):

@@ -51,13 +51,14 @@ class CanvasCollection():
     def initialize_power_plotters(self):
         power_columns = hfr.HoboDataContainer.legal_columns["power"]
         plotters = [Generic_Hourly_Average_Plotter(column) for column in power_columns]
+        plotters.extend([Single_Bar_Subinterval_Plotter(column) for column in power_columns])
         return plotters
 
     def initialize_temp_plotters(self):
         temp_columns = hfr.HoboDataContainer.legal_columns["temp"]
         plotters = [Generic_Hourly_Average_Plotter(column) for column in temp_columns]
-        scatter_plots = [Generic_Scatter_Plotter(list(x)) for x in itertools.combinations(temp_columns,2)]
-        plotters.extend(scatter_plots)
+        plotters.extend([Generic_Scatter_Plotter(list(x)) for x in itertools.combinations(temp_columns,2)])
+        plotters.extend([Single_Bar_Subinterval_Plotter(column) for column in temp_columns])
         return plotters
 
 
@@ -148,8 +149,10 @@ class Plotter():
 
     def __init__(self):
         self.parameters = self.get_default_parameters()
-        
 
+    def get_subset_functions(self):
+        return list(self.subset_functions.keys())
+        
     def get_default_parameters(self):
         return param_utils.Parameter_Collection(OrderedDict([]))
 
@@ -174,32 +177,6 @@ class Plotter():
     def update_parameters(self,parameter_collection):
         self.parameters.update_values_param_collection(parameter_collection)
 
-class State_Bar_Chart_Plotter(Plotter):
-
-    def __init__(self):
-        Plotter.__init__(self)
-
-    def get_default_parameters(self):
-        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Equipment Open/Closed Patterns"),
-                                                              (x_label_param, "Status"),
-                                                              (y_label_param, "Percentage of Time"),
-                                                              (color_param, QColor(0,0,255))]))
-
-    def plotting_function(self,figure,hdc=None):
-    
-        axes = self.get_axes(figure)
-        closed_percentage = hdc.series_time_percentage('State')
-        open_percentage = 1 - closed_percentage
-        width = .2
-        x_pos = np.arange(2)
-        axes.bar(x_pos,[open_percentage,closed_percentage],width,align="center",color=self.parameters[color_param].name())
-        axes.set_xlim([-width,x_pos[-1] + width])
-        axes.set_xticks(x_pos)
-        axes.set_xticklabels(("Open","Closed"))
-        axes.set_xlabel(self.parameters[x_label_param])
-        axes.set_ylabel(self.parameters[y_label_param])
-        axes.set_aspect(1)
-        axes.set_title(self.parameters[title_param])
 
 class Light_Occupancy_Pie_Chart_Plotter(Plotter):
 
@@ -374,33 +351,129 @@ class Generic_Scatter_Plotter(Plotter):
         axes.set_ylabel(self.parameters[y_label_param])
         axes.set_title(self.parameters[title_param])
 
-#Subinterval Bar Plot for All Data Types
-#One Bar for each subinterval (so 4 total)
-class Generic_Subinterval_Bar_Chart_Plotter(Plotter):
 
-    def __init__(self,columns):
-        self.columns = columns
+class Generic_Bar_Plotter(Plotter):
+
+    def __init__(self):
         Plotter.__init__(self)
 
-    def get_default_parameters(self):
+    def single_bar_plot(self,axes,values,errors=None,title=None,x_ticks=None,x_tick_fontsize=12,x_label=None,y_label=None,color="blue",rotation="horizontal"):
+
+        min_y,max_y = self.get_min_max_values(values)
+        ind = np.arange(len(values)) * (max_y / len(values))
+        margin = .05
+        width = ind[1] / 2
+
+        if(errors):
+            axes.bar(ind,values,width,align="center",color=color,yerr=errors,error_kw=dict(ecolor='black'))
+        else:
+            axes.bar(ind,values,width,align="center",color=color)
+
+        axes.set_xlim([-width,ind[-1] + width])
+        axes.set_xticks(ind)
+
+        if(x_ticks): axes.set_xticklabels(x_ticks,rotation=rotation,fontsize=x_tick_fontsize)
+        if(x_label): axes.set_xlabel(x_label)
+        if(y_label): axes.set_ylabel(y_label)
+        if(title): axes.set_title(title,fontsize=10)
+        axes.set_aspect(1)
+
+    def twin_bar_plot(self):
         return None
+
+    def twin_bar_plot_two_scales(self):
+        return None
+
+    def get_min_max_values(self,values):
+        if(all(type(x) in [float,np.float64] for x in values)):
+            return min(values),max(values)
+        else:
+            print(values)
+            print([type(x) for x in values])
+
+
+class State_Bar_Chart_Plotter(Generic_Bar_Plotter):
+
+    def __init__(self):
+        Generic_Bar_Plotter.__init__(self)
+
+    def get_default_parameters(self):
+        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Equipment Open/Closed Patterns"),
+                                                              (x_label_param, "Status"),
+                                                              (y_label_param, "Percentage of Time"),
+                                                              (color_param, QColor(0,0,255))]))
 
     def plotting_function(self,figure,hdc=None):
-        return None
 
-#Bar Plot with Hourly Averages for Observational Data
-#One Bar for each hour of the day (so 24 total)
-class Generic_Hourly_Average_Bar_Chart_Plotter(Plotter):
+        axes = self.get_axes(figure)
+        closed_percentage = hdc.series_time_percentage('State')
+        open_percentage = 1 - closed_percentage
+        self.single_bar_plot(axes,[open_percentage,closed_percentage],title=self.parameters[title_param],
+                                                                      x_ticks=("Open","Closed"),
+                                                                      x_label=self.parameters[x_label_param],
+                                                                      y_label=self.parameters[y_label_param],
+                                                                      color=self.parameters[color_param].name()
+                                                                      )
 
-    def __init__(self,columns):
-        self.columns = columns
-        Plotter.__init__(self)
+
+class Single_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
+
+    def __init__(self,column_name):
+        self.column_name = column_name
+        Generic_Bar_Plotter.__init__(self)
 
     def get_default_parameters(self):
-        return None
+        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Recorded Patterns: %s" % self.column_name),
+                                                              (x_label_param, "Time Period"),
+                                                              (y_label_param, "Average Value: %s" % self.column_name),
+                                                              (color_param, QColor(0,0,255))]))
 
     def plotting_function(self,figure,hdc=None):
-        return None
+
+        axes = self.get_axes(figure)
+
+        values = []
+        errors = []
+        x_ticks = []
+
+        x_tick_format = lambda label : label.replace(" during ","\n")
+
+        for subset_function in self.get_subset_functions()[1:]:
+            copy_hdc = subset_function(hdc)
+            values.append(copy_hdc.series_average(self.column_name))
+            errors.append(copy_hdc.series_std(self.column_name))
+            x_ticks.append(x_tick_format(self.subset_functions[subset_function]))
+
+        self.single_bar_plot(axes,values,errors=errors,
+                                         title=self.parameters[title_param],
+                                         x_ticks=x_ticks,
+                                         x_tick_fontsize=8,
+                                         x_label=self.parameters[x_label_param],
+                                         y_label=self.parameters[y_label_param],
+                                         color=self.parameters[color_param].name(),
+                                         rotation="vertical"
+                                         )
+        figure.tight_layout()
+
+
+class Twin_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
+
+    def __init__(self):
+        Generic_Bar_Plotter.__init__(self)
+
+    def get_default_parameters(self):
+        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Equipment Open/Closed Patterns"),
+                                                              (x_label_param, "Status"),
+                                                              (y_label_param, "Percentage of Time"),
+                                                              (color_param, QColor(0,0,255))]))
+
+
+class Twin_Bar_24_Hour_Average(Generic_Bar_Plotter):
+
+    def __init__(self):
+        Generic_Bar_Plotter.__init__(self)
+
+
 
 title_param = param_utils.Parameter_Expectation("Title",param_utils.Param_Type_Wrapper(str))
 label_param = param_utils.Parameter_Expectation("Label",param_utils.Param_Type_Wrapper(str))

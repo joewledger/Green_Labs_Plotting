@@ -275,5 +275,11 @@ class HoboDataContainer():
         std_dev = lambda array_like : np.std(array_like)
         return self.calculate_interval_statistic(series_name, interval_length,std_dev,start_time=start_time,end_time=end_time)
 
+    def series_average(self,series_name):
+        return self.dataframe[series_name].mean()
+
+    def series_std(self,series_name):
+        return self.dataframe[series_name].std()
+
     def __str__(self):
         return self.dataframe.__str__()
