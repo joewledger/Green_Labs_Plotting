@@ -147,5 +147,5 @@ class Main_Controller():
             self.ui.program_status.setText("Done Generating Graphs")
             self.ui.save_status.setText("Unsaved graph")
         except:
-            self.ui.program_status("Failed to generate plots")
+            self.ui.program_status.setText("Failed to generate plots")
         self.ui.generate_graphs.setEnabled(True)

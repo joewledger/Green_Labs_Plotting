@@ -1,9 +1,10 @@
 */__pycache__/*
 *.pyc
-*.ui
 *.spec
 sample_data/
 sample_plots/
 dist/
+demo/
 build/
+tutorial/
 notes.txt
