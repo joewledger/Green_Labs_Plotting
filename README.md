@@ -6,10 +6,18 @@ However, the wealth of data they were collecting was not being well utilized.
 This software tool attempts to bridge the gap between data collection and deep insights into ways to change behavior and increase sustainability on campus.
 
 #Requirements
+* pyInstaller==3.2
+* pandas==0.18.0
+* matplotlib==1.5.1
+* numpy==1.11.0
+* pyQt5
+* Qt5.6
+* QtCreator5 (Only neccesary for easily editing the UI file)
 
+Other versions of these packages might work, however they have not been tested.
+To convert the source code into an easy-to-use .exe file, use the following command:
 
-#Building from source
-
+`pyinstaller main.py -F -w -n green_labs_visualization`
 
 #Data Description
 
