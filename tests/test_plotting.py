@@ -64,8 +64,10 @@ def test_single_bar_subinterval_temperature():
 def test_twin_bar_plot():
 
     data = [(.56,.43),(.75,.25),(.82,.35)]
+    errors = [(.1,.05),(.12,.17),(.23,.32)]
     bar_plotter = plotting.Generic_Bar_Plotter()
-    kwargs = {"title" : "Example"}
+    kwargs = dict(title = "Example",colors=("blue","red"),errors=errors,x_ticks=["Label 1", "Label 2", "Label 3"],
+                  x_label="Time", y_label="Value", bar_labels=("Bar 1", "Bar 2"))
 
     generic_test_dummy_data(data,bar_plotter.twin_bar_plot,**kwargs)
 

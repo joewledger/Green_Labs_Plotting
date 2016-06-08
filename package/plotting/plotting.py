@@ -362,7 +362,7 @@ class Generic_Bar_Plotter(Plotter):
     def __init__(self):
         Plotter.__init__(self)
 
-    def single_bar_plot(self,axes,values,errors=None,title=None,x_ticks=None,x_tick_fontsize=12,x_label=None,y_label=None,color="blue",rotation="horizontal"):
+    def single_bar_plot(self,axes,values,errors=None,title=None,title_fontsize=12,x_ticks=None,x_tick_fontsize=12,x_label=None,y_label=None,color="blue",rotation="horizontal"):
 
         min_y,max_y = self.get_min_max_values(values)
         ind = np.arange(len(values)) * (max_y / len(values))
@@ -380,10 +380,11 @@ class Generic_Bar_Plotter(Plotter):
         if(x_ticks): axes.set_xticklabels(x_ticks,rotation=rotation,fontsize=x_tick_fontsize)
         if(x_label): axes.set_xlabel(x_label)
         if(y_label): axes.set_ylabel(y_label)
-        if(title): axes.set_title(title,fontsize=10)
+        if(title): axes.set_title(title,fontsize=title_fontsize)
         axes.set_aspect(1)
 
     #Values and errors expect a list of tuples, of which each tuple contains two values (one for each of the twin bars)
+    #bar_labels expects a tuple containing two strings
     def twin_bar_plot(self,axes,values,errors=None,title=None,x_ticks=None,x_ticks_fontsize=12,
                       x_label=None,y_label=None,bar_labels=None,colors=("blue","red"),rotation="horizontal"):
         
@@ -392,15 +393,26 @@ class Generic_Bar_Plotter(Plotter):
         margin = .05
         width = ind[1] / 4
 
-        values1 = [v[0] for v in values]
-        values2 = [v[1] for v in values]
+        unpack_tuples = lambda l,index : [x[index] for x in l]
 
-        axes.bar(ind,values1,width,align="center")
-        axes.bar(ind + width,values2,width,align="center")
+        kwarg_list = [dict(align="center",color=colors[x]) for x in range(0,2)]
+        if(errors):
+            for x in range(0,2):
+                kwarg_list[x]["yerr"] = unpack_tuples(errors,x)
+                kwarg_list[x]["error_kw"] = dict(ecolor='black')
+
+        rect1 = axes.bar(ind,unpack_tuples(values,0),width,**kwarg_list[0])
+        rect2 = axes.bar(ind + width,unpack_tuples(values,1),width,**kwarg_list[1])
 
         axes.set_xticks(ind + width / 2)
 
+        if(x_ticks): axes.set_xticklabels(x_ticks,rotation=rotation,fontsize=x_ticks_fontsize)
+        if(x_label): axes.set_xlabel(x_label)
+        if(y_label): axes.set_ylabel(y_label)
         if(title): axes.set_title(title,fontsize=10)
+        if(bar_labels): axes.legend((rect1[0], rect2[0]), bar_labels)
+
+        axes.set_aspect(1)
 
 
     def twin_bar_plot_two_scales(self):
