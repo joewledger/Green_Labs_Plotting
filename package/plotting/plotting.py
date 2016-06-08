@@ -68,7 +68,7 @@ class CanvasCollection():
     def initialize_blank_canvas_and_plotter(self):
         self.canvas_list.append(MplCanvas(parent=self.parent,color=self.color))
         self.plotters.append(Plotter())
-        self.plotters[0].plot(self.canvas_list[0])
+        self.plotters[0].plot(self.canvas_list[0],None)
 
     def update_hobo_data_container(self,hdc):
         self.initialize_plotters_and_canvases(hdc.sensor_type)
@@ -89,7 +89,7 @@ class CanvasCollection():
         faulty_plotters = []
         for i,plotter in enumerate(self.plotters):
             try:
-                plotter.plot(self.canvas_list[i],hdc=self.hdc)
+                plotter.plot(self.canvas_list[i],self.hdc)
             except:
                 faulty_plotters.append(i)
         self.remove_faulty_plotters(faulty_plotters)
@@ -159,11 +159,11 @@ class Plotter():
     def get_default_parameters(self):
         return param_utils.Parameter_Collection(OrderedDict([]))
 
-    def plot(self,canvas,hdc=None):
-        self.plotting_function(canvas.figure,hdc=hdc)
+    def plot(self,canvas,hdc):
+        self.plotting_function(canvas.figure,hdc)
         canvas.draw()
 
-    def plotting_function(self,figure,hdc=None):
+    def plotting_function(self,figure,hdc):
         self.blank_canvas(figure)
         
 
@@ -197,7 +197,7 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
         return param_utils.Parameter_Collection(OrderedDict([(title_param, self.title_gen(self.subset_index)),
                                                              (self.color_param,[QColor(Qt.yellow),QColor(Qt.red),QColor(Qt.blue),QColor(Qt.green)])]))
 
-    def plotting_function(self,figure,hdc=None):
+    def plotting_function(self,figure,hdc):
         axes = self.get_axes(figure)
         subset_function = list(self.subset_functions.keys())[self.subset_index]
         patches,texts = self.subset_pie_chart(axes,hdc,self.parameters[title_param],self.graph_labels,subset_func = subset_function)
@@ -267,7 +267,7 @@ class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
                                                              (self.color_param,[QColor(Qt.yellow),QColor(Qt.red),QColor(Qt.blue),QColor(Qt.green)]),
                                                              (self.subplot_titles,["Weekdays, Buisness Hours","Weekdays, Non Buisness Hours","Weekends, Buisness Hours","Weekends, Non Buisness Hours"])]))
 
-    def plotting_function(self,figure,hdc=None):
+    def plotting_function(self,figure,hdc):
 
         colors = [c.name() for c in self.parameters[self.color_param]]
         subplot_titles = self.parameters[self.subplot_titles]
@@ -299,7 +299,7 @@ class Generic_Hourly_Average_Plotter(Plotter):
                                                              (y_label_param, self.column_name),
                                                              (color_param, QColor(Qt.blue))]))
 
-    def plotting_function(self,figure,hdc=None):
+    def plotting_function(self,figure,hdc):
         
         axes = self.get_axes(figure)
 
@@ -344,7 +344,7 @@ class Generic_Scatter_Plotter(Plotter):
                                                              (y_label_param, self.columns[1]),
                                                              (color_param, QColor(Qt.green))]))
 
-    def plotting_function(self,figure,hdc=None):
+    def plotting_function(self,figure,hdc):
 
         axes = self.get_axes(figure)
 
@@ -414,7 +414,6 @@ class Generic_Bar_Plotter(Plotter):
 
         axes.set_aspect(1)
 
-
     def twin_bar_plot_two_scales(self):
         return None
 
@@ -439,7 +438,7 @@ class State_Bar_Chart_Plotter(Generic_Bar_Plotter):
                                                               (y_label_param, "Percentage of Time"),
                                                               (color_param, QColor(0,0,255))]))
 
-    def plotting_function(self,figure,hdc=None):
+    def plotting_function(self,figure,hdc):
 
         axes = self.get_axes(figure)
         closed_percentage = hdc.series_time_percentage('State')
@@ -464,7 +463,7 @@ class Single_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
                                                               (y_label_param, "Average Value: %s" % self.column_name),
                                                               (color_param, QColor(0,0,255))]))
 
-    def plotting_function(self,figure,hdc=None):
+    def plotting_function(self,figure,hdc):
 
         axes = self.get_axes(figure)
 
