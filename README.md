@@ -50,7 +50,7 @@ Full instructions for software usage are posted on the CWRU Green Labs Google Dr
 
 #Licensing
 
-
+This code is licensed under the GNU LESSER GENERAL PUBLIC LICENSE Version 3
 
 #Demos
 
