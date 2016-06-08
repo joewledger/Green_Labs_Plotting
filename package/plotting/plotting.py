@@ -36,12 +36,15 @@ class CanvasCollection():
 
     def initialize_plotter_type_map(self):
         self.plotter_type_map = {
-                                 "state" : [State_Bar_Chart_Plotter()],
+                                 "state" : self.initialize_state_plotters(),
                                  "light" : self.initialize_light_plotters(),
                                  "power" : self.initialize_power_plotters(),
                                  "temp" : self.initialize_temp_plotters()
                                 }
                                 
+    def initialize_state_plotters(self):
+        plotters = [State_Bar_Chart_Plotter()]
+        return plotters
 
     def initialize_light_plotters(self):
         plotters = [Light_Occupancy_Pie_Chart_Plotter(i) for i in range(0,len(Plotter.subset_functions))]
@@ -223,6 +226,8 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
 
         return patches,texts
 
+    #Rotate texts and autotexts so they do not overlap with lines in the piecharts
+    #Also Remove autotexts and texts if their corresponding percentage is less than 1%
     def reposition_texts(self,patch,text,autotext,percent):
 
         text_height = 1.1
@@ -378,18 +383,37 @@ class Generic_Bar_Plotter(Plotter):
         if(title): axes.set_title(title,fontsize=10)
         axes.set_aspect(1)
 
-    def twin_bar_plot(self):
-        return None
+    #Values and errors expect a list of tuples, of which each tuple contains two values (one for each of the twin bars)
+    def twin_bar_plot(self,axes,values,errors=None,title=None,x_ticks=None,x_ticks_fontsize=12,
+                      x_label=None,y_label=None,bar_labels=None,colors=("blue","red"),rotation="horizontal"):
+        
+        min_y,max_y = self.get_min_max_values(values)
+        ind = np.arange(len(values)) * (max_y / len(values))
+        margin = .05
+        width = ind[1] / 4
+
+        values1 = [v[0] for v in values]
+        values2 = [v[1] for v in values]
+
+        axes.bar(ind,values1,width,align="center")
+        axes.bar(ind + width,values2,width,align="center")
+
+        axes.set_xticks(ind + width / 2)
+
+        if(title): axes.set_title(title,fontsize=10)
+
 
     def twin_bar_plot_two_scales(self):
         return None
 
+    #Returns a tuple containing the highest and lowest numbers in a list of values
+    #Can handle two cases: a list of floats, or a list of tuples of floats
     def get_min_max_values(self,values):
         if(all(type(x) in [float,np.float64] for x in values)):
             return min(values),max(values)
-        else:
-            print(values)
-            print([type(x) for x in values])
+        elif(all(type(x) == tuple for x in values)):
+            tuple_op = lambda l,op : op([op(item) for item in values])
+            return tuple_op(values,min),tuple_op(values,max)
 
 
 class State_Bar_Chart_Plotter(Generic_Bar_Plotter):
