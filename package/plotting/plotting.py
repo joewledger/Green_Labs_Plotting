@@ -385,8 +385,8 @@ class Generic_Bar_Plotter(Plotter):
 
     #Values and errors expect a list of tuples, of which each tuple contains two values (one for each of the twin bars)
     #bar_labels expects a tuple containing two strings
-    def twin_bar_plot(self,axes,values,errors=None,title=None,x_ticks=None,x_ticks_fontsize=12,
-                      x_label=None,y_label=None,bar_labels=None,colors=("blue","red"),rotation="horizontal"):
+    def twin_bar_plot(self,axes,values,errors=None,title=None,title_fontsize=12,x_ticks=None,x_ticks_fontsize=12,rotation="horizontal",
+                      x_label=None,y_label=None,bar_labels=None,colors=("blue","red")):
         
         min_y,max_y = self.get_min_max_values(values)
         ind = np.arange(len(values)) * (max_y / len(values))
@@ -409,13 +409,36 @@ class Generic_Bar_Plotter(Plotter):
         if(x_ticks): axes.set_xticklabels(x_ticks,rotation=rotation,fontsize=x_ticks_fontsize)
         if(x_label): axes.set_xlabel(x_label)
         if(y_label): axes.set_ylabel(y_label)
-        if(title): axes.set_title(title,fontsize=10)
+        if(title): axes.set_title(title,fontsize=title_fontsize)
         if(bar_labels): axes.legend((rect1[0], rect2[0]), bar_labels)
-
         axes.set_aspect(1)
 
-    def twin_bar_plot_two_scales(self):
-        return None
+
+    def twin_bar_plot_two_scales(self,axes,values,errors=None,title=None,title_fontsize=12,x_ticks=None,x_ticks_fontsize=12,rotation="horizontal"
+                                  x_label=None,y_label=None,bar_labels=None,colors=("blue","red")):
+
+        axes2 = axes.twinx()
+
+        min_y,max_y = self.get_min_max_values(values)
+        ind = np.arange(len(values)) * (max_y / len(values))
+        margin = .05
+        width = ind[1] / 4
+
+        unpack_tuples = lambda l,index : [x[index] for x in l]
+
+        kwarg_list = [dict(align="center",color=colors[x]) for x in range(0,2)]
+
+
+        rect1 = axes.bar(ind,unpack_tuples(values,0),width,**kwarg_list[0])
+        rect2 = axes2.bar(ind + width,unpack_tuples(values,1),width,**kwarg_list[1])
+
+        if(x_ticks): axes.set_xticklabels(x_ticks,rotation=rotation,fontsize=x_ticks_fontsize)
+        if(x_label): axes.set_xlabel(x_label)
+
+
+
+
+
 
     #Returns a tuple containing the highest and lowest numbers in a list of values
     #Can handle two cases: a list of floats, or a list of tuples of floats
