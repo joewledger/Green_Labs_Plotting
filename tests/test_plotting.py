@@ -2,7 +2,6 @@ import package.plotting.plotting as plotting
 import package.hobo_processing.hobo_file_reader as hfr
 
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 
 from nose.tools import nottest
 
@@ -65,10 +64,11 @@ def test_single_bar_subinterval_temperature():
 
 
 def test_twin_bar_plot_two_scales():
-    data = [(.56,.43),(.75,.25),(.82,.35)]
+    data = [(.56,.43),(.75,.25),(.82,.35),(.26,.89)]
     errors = [(.1,.05),(.12,.17),(.23,.32)]
+    y_labels = ["Label 1", "Label 2"]
     bar_plotter = plotting.Generic_Bar_Plotter()
-    kwargs = dict(title = "Example",errors=errors)
+    kwargs = dict(title = "Example",errors=errors,x_ticks=[1,2,3,4],y_labels=y_labels)
 
     generic_test_dummy_data(data,bar_plotter.twin_bar_plot_two_scales,**kwargs)
 
@@ -107,7 +107,6 @@ def test_average_temperature():
 ##########################################################################################
 #Lighting and Occupancy Tests
 ##########################################################################################
-
 def test_light_occupancy_pie_chart_single():
     generic_test_plot("sample_data/sample_light_data.csv",plotting.Light_Occupancy_Pie_Chart_Plotter,args=3)
 

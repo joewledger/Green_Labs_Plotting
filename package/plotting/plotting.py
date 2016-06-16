@@ -255,7 +255,6 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
             text.set_visible(False)
         
 
-
 class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
 
     def __init__(self):
@@ -284,6 +283,7 @@ class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
         figure.legend(patches,labels=self.graph_labels,loc='upper left',prop={'size':8})
 
         figure.suptitle(self.parameters[title_param],fontsize=16)
+
 
 #Line Plot with Hourly Averages for Interval Based Data
 class Generic_Hourly_Average_Plotter(Plotter):
@@ -330,6 +330,7 @@ class Generic_Hourly_Average_Plotter(Plotter):
         axes.set_xlim([0,len(indices)])
         figure.tight_layout()
         axes.set_title(self.parameters[title_param])
+
 
 class Generic_Scatter_Plotter(Plotter):
 
@@ -414,26 +415,33 @@ class Generic_Bar_Plotter(Plotter):
         axes.set_aspect(1)
 
 
-    def twin_bar_plot_two_scales(self,axes,values,errors=None,title=None,title_fontsize=12,x_ticks=None,x_ticks_fontsize=12,rotation="horizontal"
-                                  x_label=None,y_label=None,bar_labels=None,colors=("blue","red")):
+    def twin_bar_plot_two_scales(self,axes,values,errors=None,title=None,title_fontsize=12,x_ticks=None,x_ticks_fontsize=12,rotation="horizontal",
+                                  x_label=None,y_labels=None,bar_labels=None,colors=("blue","red")):
 
         axes2 = axes.twinx()
 
-        min_y,max_y = self.get_min_max_values(values)
-        ind = np.arange(len(values)) * (max_y / len(values))
-        margin = .05
-        width = ind[1] / 4
+        #min_y,max_y = self.get_min_max_values(values)
+        #ind = np.arange(len(values)) * (max_y / len(values))
 
-        unpack_tuples = lambda l,index : [x[index] for x in l]
+        n = len(values)
 
-        kwarg_list = [dict(align="center",color=colors[x]) for x in range(0,2)]
+        ind = np.arange(n)
+        width = .35
 
+        means1 = [v[0] for v in values]
+        means2 = [v[1] for v in values]
 
-        rect1 = axes.bar(ind,unpack_tuples(values,0),width,**kwarg_list[0])
-        rect2 = axes2.bar(ind + width,unpack_tuples(values,1),width,**kwarg_list[1])
-
-        if(x_ticks): axes.set_xticklabels(x_ticks,rotation=rotation,fontsize=x_ticks_fontsize)
+        rect1 = axes.bar(ind,means1,width,color='r',align="center")
+        rect2 = axes2.bar(ind + width,means2,width,color='y',align="center")
+        if(x_ticks):
+            axes.set_xticks(ind + width / 2)
+            axes.set_xticklabels(x_ticks,rotation=rotation,fontsize=x_ticks_fontsize)
         if(x_label): axes.set_xlabel(x_label)
+        if(y_labels): 
+            axes.set_ylabel(y_labels[0])
+            axes2.set_ylabel(y_labels[1])
+        if(title):
+            axes.set_title(title)
 
 
 
