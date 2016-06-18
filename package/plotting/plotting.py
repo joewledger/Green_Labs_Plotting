@@ -345,13 +345,17 @@ class Generic_Scatter_Plotter(Plotter):
                                                              (y_label_param, self.columns[1]),
                                                              (color_param, QColor(Qt.green))]))
 
+    def get_data(self,hdc):
+        return [hdc.interval_averages(c,pd.Timedelta('1 hours')) for c in self.columns]
+
+
     def plotting_function(self,figure,hdc):
 
         axes = self.get_axes(figure)
 
-        averages = [hdc.interval_averages(c,pd.Timedelta('1 hours')) for c in self.columns]
+        data = self.get_data(hdc)
 
-        axes.scatter(averages[0],averages[1],color=self.parameters[color_param].name())
+        axes.scatter(data[0],data[1],color=self.parameters[color_param].name())
 
         axes.set_xlabel(self.parameters[x_label_param])
         axes.set_ylabel(self.parameters[y_label_param])
@@ -363,7 +367,8 @@ class Generic_Bar_Plotter(Plotter):
     def __init__(self):
         Plotter.__init__(self)
 
-    def single_bar_plot(self,axes,values,errors=None,title=None,title_fontsize=12,x_ticks=None,x_tick_fontsize=12,x_label=None,y_label=None,color="blue",rotation="horizontal"):
+    def single_bar_plot(self,axes,values,errors=None,title=None,title_fontsize=12,x_ticks=None,x_tick_fontsize=12,
+                        x_label=None,y_label=None,color="blue",rotation="horizontal"):
 
         min_y,max_y = self.get_min_max_values(values)
         ind = np.arange(len(values)) * (max_y / len(values))
@@ -468,12 +473,17 @@ class State_Bar_Chart_Plotter(Generic_Bar_Plotter):
                                                               (y_label_param, "Percentage of Time"),
                                                               (color_param, QColor(0,0,255))]))
 
+    def get_data(self,hdc):
+        closed_percentage = hdc.series_time_percentage('State')
+        open_percentage = 1 - closed_percentage
+        return [open_percentage,closed_percentage]
+
+
     def plotting_function(self,figure,hdc):
 
         axes = self.get_axes(figure)
-        closed_percentage = hdc.series_time_percentage('State')
-        open_percentage = 1 - closed_percentage
-        self.single_bar_plot(axes,[open_percentage,closed_percentage],title=self.parameters[title_param],
+        data = self.get_data(hdc)
+        self.single_bar_plot(axes,data,title=self.parameters[title_param],
                                                                       x_ticks=("Open","Closed"),
                                                                       x_label=self.parameters[x_label_param],
                                                                       y_label=self.parameters[y_label_param],
@@ -520,17 +530,35 @@ class Single_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
                                          )
         figure.tight_layout()
 
-
+#Creates a subinterval bar plot, where each subinterval has two bars.
+#The two bars can represent different quantities, but they should be plotted on the same scale
+#Examples:
+#   1) Bar 1: Light On Percentage, Bar 2: Occupied Percentage
+#   2) Bar 1: Door Open, Bar 2: Door Closed
 class Twin_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
 
-    def __init__(self):
+    def __init__(self,columns):
+        self.columns = columns
+        self.color_params = color_param.copy_new_list_length(2)
         Generic_Bar_Plotter.__init__(self)
+
 
     def get_default_parameters(self):
         return param_utils.Parameter_Collection(OrderedDict([(title_param, "Equipment Open/Closed Patterns"),
                                                               (x_label_param, "Status"),
                                                               (y_label_param, "Percentage of Time"),
-                                                              (color_param, QColor(0,0,255))]))
+                                                              (self.color_params, [QColor(0,0,255),QColor(0,255,0)])]))
+
+    def get_data(self):
+        return None
+
+    def plotting_function(self,figure,hdc):
+        
+        axes = self.get_axes(figure)
+
+
+
+
 
 
 class Twin_Bar_24_Hour_Average(Generic_Bar_Plotter):
