@@ -63,12 +63,18 @@ def test_single_bar_subinterval_temperature():
     generic_test_plot("sample_data/sample_temperature_data_truncated3.csv",plotting.Single_Bar_Subinterval_Plotter,args='Temp, °F')
 
 
+def test_all_bar_plots():
+    test_twin_bar_plot_two_scales()
+    test_twin_bar_plot()
+    test_single_bar_plots()
+
+
 def test_twin_bar_plot_two_scales():
     data = [(.56,.43),(.75,.25),(.82,.35),(.26,.89)]
-    errors = [(.1,.05),(.12,.17),(.23,.32)]
+    errors = [(.1,.05),(.12,.17),(.23,.32),(.45,.37)]
     y_labels = ["Label 1", "Label 2"]
     bar_plotter = plotting.Generic_Bar_Plotter()
-    kwargs = dict(title = "Example",errors=errors,x_ticks=[1,2,3,4],y_labels=y_labels)
+    kwargs = dict(title = "Example",errors=errors,x_ticks=[1,2,3,4],y_labels=y_labels,x_label="Time")
 
     generic_test_dummy_data(data,bar_plotter.twin_bar_plot_two_scales,**kwargs)
 
@@ -89,7 +95,8 @@ def test_single_bar_plots():
 
     data = [75.4,76.3,78.2,74.9]
     bar_plotter = plotting.Generic_Bar_Plotter()
-    generic_test_dummy_data(data,bar_plotter.single_bar_plot)
+    kwargs = dict(x_ticks=["A","B","C","D"])
+    generic_test_dummy_data(data,bar_plotter.single_bar_plot,**kwargs)
 
 
 ##########################################################################################
