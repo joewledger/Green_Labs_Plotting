@@ -144,10 +144,10 @@ class MplCanvas(FigureCanvas):
 class Plotter():
 
     subset_functions = OrderedDict([(lambda hdc : hdc, "Entire Study Period"),
-                                    (lambda hdc : hdc.buisness_hours().weekdays(), "Weekdays during Buisness Hours"),
-                                    (lambda hdc : hdc.non_buisness_hours().weekdays(), "Weekdays during Non-Buisness Hours"),
-                                    (lambda hdc : hdc.buisness_hours().weekends(), "Weekends during Buisness Hours"),
-                                    (lambda hdc : hdc.non_buisness_hours().weekends(), "Weekends during Non-Buisness Hours")])
+                                    (lambda hdc : hdc.buisness_hours().weekdays(), "Weekdays\nBuisness Hours"),
+                                    (lambda hdc : hdc.non_buisness_hours().weekdays(), "Weekdays\nNon-Buisness Hours"),
+                                    (lambda hdc : hdc.buisness_hours().weekends(), "Weekends\nBuisness Hours"),
+                                    (lambda hdc : hdc.non_buisness_hours().weekends(), "Weekends\nNon-Buisness Hours")])
 
 
     def __init__(self):
@@ -155,6 +155,9 @@ class Plotter():
 
     def get_subset_functions(self):
         return list(self.subset_functions.keys())
+
+    def get_subinterval_labels(self):
+        return [self.subset_functions[f] for f in self.get_subset_functions()[1:]]
         
     def get_default_parameters(self):
         return param_utils.Parameter_Collection(OrderedDict([]))
@@ -265,6 +268,7 @@ class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
         return param_utils.Parameter_Collection(OrderedDict([(title_param, "Lighting Patterns"),
                                                              (self.color_param,[QColor(Qt.yellow),QColor(Qt.red),QColor(Qt.blue),QColor(Qt.green)]),
                                                              (self.subplot_titles,["Weekdays, Buisness Hours","Weekdays, Non Buisness Hours","Weekends, Buisness Hours","Weekends, Non Buisness Hours"])]))
+
 
     def plotting_function(self,figure,hdc):
 
@@ -503,31 +507,27 @@ class Single_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
                                                               (y_label_param, "Average Value: %s" % self.column_name),
                                                               (color_param, QColor(0,0,255))]))
 
-    def plotting_function(self,figure,hdc):
-
-        axes = self.get_axes(figure)
-
-        values = []
-        errors = []
-        x_ticks = []
-
-        x_tick_format = lambda label : label.replace(" during ","\n")
-
+    def get_data(self,hdc):
+        values,errors = [],[]
         for subset_function in self.get_subset_functions()[1:]:
             copy_hdc = subset_function(hdc)
             values.append(copy_hdc.series_average(self.column_name))
             errors.append(copy_hdc.series_std(self.column_name))
-            x_ticks.append(x_tick_format(self.subset_functions[subset_function]))
+        return values,errors
 
-        self.single_bar_plot(axes,values,errors=errors,
-                                         title=self.parameters[title_param],
-                                         x_ticks=x_ticks,
-                                         x_tick_fontsize=8,
-                                         x_label=self.parameters[x_label_param],
-                                         y_label=self.parameters[y_label_param],
-                                         color=self.parameters[color_param].name(),
-                                         rotation="vertical"
-                                         )
+
+    def plotting_function(self,figure,hdc):
+
+        axes = self.get_axes(figure)
+
+        values,errors = self.get_data(hdc)
+        x_ticks = self.get_subinterval_labels()
+
+        kwargs = dict(errors=errors, title=self.parameters[title_param], x_ticks=x_ticks, x_tick_fontsize=8, 
+                      x_label=self.parameters[x_label_param], y_label=self.parameters[y_label_param], 
+                      color=self.parameters[color_param].name(), rotation="vertical")
+
+        self.single_bar_plot(axes,values, **kwargs)
         figure.tight_layout()
 
 #Creates a subinterval bar plot, where each subinterval has two bars.
@@ -542,31 +542,90 @@ class Twin_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
         self.color_params = color_param.copy_new_list_length(2)
         Generic_Bar_Plotter.__init__(self)
 
-
     def get_default_parameters(self):
-        return param_utils.Parameter_Collection(OrderedDict([(title_param, "Equipment Open/Closed Patterns"),
-                                                              (x_label_param, "Status"),
-                                                              (y_label_param, "Percentage of Time"),
-                                                              (self.color_params, [QColor(0,0,255),QColor(0,255,0)])]))
+        return None
 
     def get_data(self):
         return None
 
     def plotting_function(self,figure,hdc):
-        
         axes = self.get_axes(figure)
 
 
-
-
-
-
+#Creates an hourly average bar plot, for which each hour has two bars.
+#The two bars can represent different quantities, but they should be plotted on the same scale
+#Examples:
+#   1) Bar 1: Light On Percentage, Bar 2: Occupied Percentage
+#   2) Bar 1: Door Open, Bar 2: Door Closed
 class Twin_Bar_24_Hour_Average(Generic_Bar_Plotter):
 
     def __init__(self):
         Generic_Bar_Plotter.__init__(self)
 
+    def get_default_parameters(self):
+        return None
 
+    def get_data(self):
+        return None
+
+    def plotting_function(self,figure,hdc):
+        axes = self.get_axes(figure)
+
+#Creates an hourly bar plot
+#The bar quantity can come from any interval based data reading
+#   -> Temperature and Power data
+class Single_Bar_Hourly_Average(Generic_Bar_Plotter):
+
+    def __init__(self):
+        Generic_Bar_Plotter.__init__(self)
+
+    def get_default_parameters(self):
+        return None
+
+    def get_data(self):
+        return None
+
+    def plotting_function(self,figure,hdc):
+        axes = self.get_axes(figure)
+
+
+#Creates a subinterval bar plot, where each subinterval has two bars
+#Bars do NOT need to be quantities on the same scale, but must come from the same datafile
+#Examples:
+#   1) Temperature and RH
+#   2) Voltage and Current
+class Twin_Bar_Subinterval_Two_Scales_Plotter(Generic_Bar_Plotter):
+
+    def __init__(self):
+        Generic_Bar_Plotter.__init__(self)
+
+    def get_default_parameters(self):
+        return None
+
+    def get_data(self):
+        return None
+
+    def plotting_function(self,figure,hdc):
+        axes = self.get_axes(figure)
+
+#Creates a subinterval hourly average plot, where each subinterval has two bars
+#Bars do NOT need to be quantities on the same scale, but must come from the same datafile
+#Examples:
+#   1) Temperature and RH
+#   2) Voltage and Current
+class Twin_Bar_Hourly_Average_Two_Scales_Plotter(Generic_Bar_Plotter):
+
+    def __init__(self):
+        Generic_Bar_Plotter.__init__(self)
+
+    def get_default_parameters(self):
+        return None
+
+    def get_data(self):
+        return None
+
+    def plotting_function(self,figure,hdc):
+        axes = self.get_axes(figure)
 
 title_param = param_utils.Parameter_Expectation("Title",param_utils.Param_Type_Wrapper(str))
 label_param = param_utils.Parameter_Expectation("Label",param_utils.Param_Type_Wrapper(str))
