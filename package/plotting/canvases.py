@@ -1,5 +1,4 @@
 import matplotlib
-matplotlib.use("Qt5Agg")
 from PyQt5 import QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -12,6 +11,8 @@ import package.hobo_processing.hobo_file_reader as hfr
 import package.utils.param_utils as param_utils
 from collections import *
 import itertools
+
+matplotlib.use("Qt5Agg")
 
 class CanvasCollection():
 
@@ -30,13 +31,11 @@ class CanvasCollection():
         self.view_canvas(0)
 
     def initialize_plotter_type_map(self):
-        self.plotter_type_map = {
-                                 "state" : self.initialize_state_plotters(),
-                                 "light" : self.initialize_light_plotters(),
-                                 "power" : self.initialize_power_plotters(),
-                                 "temp" : self.initialize_temp_plotters()
-                                }
-                                
+        self.plotter_type_map = {"state": self.initialize_state_plotters(),
+                                 "light": self.initialize_light_plotters(),
+                                 "power": self.initialize_power_plotters(),
+                                 "temp": self.initialize_temp_plotters()}
+
     def initialize_state_plotters(self):
         plotters = [State_Bar_Chart_Plotter()]
         return plotters

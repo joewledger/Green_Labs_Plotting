@@ -5,25 +5,25 @@ import package.utils.param_utils as param_utils
 import package.hobo_processing.hobo_file_reader as hfr
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-import sys
 import threading
-import copy
-
 import package.ui.graph_edit_dialog as ged
+
 
 class Communicate(QObject):
     signal = pyqtSignal(hfr.HoboDataContainer)
 
+
 class Communicate_Parameter_Collection(QObject):
     signal = pyqtSignal(param_utils.Parameter_Collection)
 
+
 class Main_Controller():
 
-    def __init__(self,app,ui):
+    def __init__(self, app, ui):
         self.app = app
         self.ui = ui
         background_color = self.app.get_background_color()
-        self.canvas_collection =  plt.CanvasCollection(self.ui.centralWidget,background_color)
+        self.canvas_collection = plt.CanvasCollection(self.ui.centralWidget, background_color)
         self.graph_edit = None
 
     def setup_controllers(self):
