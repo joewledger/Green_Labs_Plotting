@@ -28,9 +28,9 @@ def test_integration():
     hdc = hfr.HoboDataContainer()
     hdc.import_datafile("sample_data/sample_state_data.csv")
 
-
     main_controller = controllers.Main_Controller(Application_Test(), ui)
     main_controller.setup_controllers()
     main_controller.recieve_data_container(hdc)
+
     window.show()
     app.exec_()

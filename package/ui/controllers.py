@@ -36,18 +36,17 @@ class Main_Controller():
         self.ui.edit_graph.clicked.connect(self.recieve_edit_graph)
 
     def recieve_save(self):
-        #If there are any canvases besides the blank canvas
         save_error_window_title = "Save error"
         save_error_message = "No save location selected"
 
         if(not self.canvas_collection.num_canvases >= 1):
-            dialog_utils.messageDialog(save_error_window_title,save_error_message)
+            dialog_utils.messageDialog(save_error_window_title, save_error_message)
         elif(not self.app.save_directory):
-            dialog_utils.messageDialog(save_error_window_title,save_error_message)
+            dialog_utils.messageDialog(save_error_window_title, save_error_message)
         elif(self.ui.save_file.text() == ""):
-            dialog_utils.messageDialog(save_error_window_title,save_error_message)
+            dialog_utils.messageDialog(save_error_window_title, save_error_message)
         elif(not self.determine_save_format()):
-            dialog_utils.messageDialog(save_error_window_title,save_error_message)
+            dialog_utils.messageDialog(save_error_window_title, save_error_message)
         else:
             save_format = self.determine_save_format()
             save_file = self.ui.save_file.text()
