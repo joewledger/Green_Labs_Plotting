@@ -1,7 +1,11 @@
 from collections import *
 from PyQt5.QtGui import QColor
 from package.utils import param_utils
+from package.plotting import generic_plotters as gen_plt
+from PyQt5.QtCore import *
 
+import pandas as pd
+import numpy as np
 
 class Plotter():
 
@@ -125,7 +129,7 @@ class Light_Occupancy_Pie_Chart_Quad_Plotter(Light_Occupancy_Pie_Chart_Plotter):
         Light_Occupancy_Pie_Chart_Plotter.__init__(self, 0)
 
     def get_default_parameters(self):
-        subplot_titles = list(self.subset_functions.values())[1:]
+        subplot_titles = [s.replace("\n", ", ") for s in list(self.subset_functions.values())[1:]]
         return param_utils.Parameter_Collection(OrderedDict([(title_param, "Lighting Patterns"),
                                                              (self.color_param, self.default_colors),
                                                              (self.subplot_titles, subplot_titles)]))
@@ -178,11 +182,12 @@ class Hourly_Average_Plotter(Plotter):
             n_candidates = (x * 6 for x in range(1, 10) if len(indices) / (x * 6) < 20)
             n = next(n_candidates)
             mod_n = lambda array, n: [x for i, x in enumerate(array) if i % n == 0]
-            mod_indices = mod_n(indices, n)
-            mod_dates = mod_n(dates, n)
+            indices = mod_n(indices, n)
+            dates = mod_n(dates, n)
 
-        axes.set_xticks(mod_indices)
-        axes.set_xticklabels(mod_dates, rotation="vertical")
+        axes.set_xticks(indices)
+        axes.set_xticklabels(dates, rotation="vertical")
+
         axes.set_xlim([0, len(indices)])
         figure.tight_layout()
         axes.set_title(self.parameters[title_param])
@@ -216,10 +221,10 @@ class Scatter_Plotter(Plotter):
         axes.set_title(self.parameters[title_param])
 
 
-class State_Bar_Chart_Plotter(Generic_Bar_Plotter):
+class State_Bar_Chart_Plotter(Plotter, gen_plt.Generic_Bar_Plotter):
 
     def __init__(self):
-        Generic_Bar_Plotter.__init__(self)
+        Plotter.__init__(self)
 
     def get_default_parameters(self):
         defaults = OrderedDict([(title_param, "Equipment Open/Closed Patterns"),
@@ -241,11 +246,11 @@ class State_Bar_Chart_Plotter(Generic_Bar_Plotter):
         self.single_bar_plot(axes, data, **kwargs)
 
 
-class Single_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
+class Single_Bar_Subinterval_Plotter(Plotter, gen_plt.Generic_Bar_Plotter):
 
     def __init__(self, column_name):
         self.column_name = column_name
-        Generic_Bar_Plotter.__init__(self)
+        Plotter.__init__(self)
 
     def get_default_parameters(self):
         title = "Recorded Patterns: %s" % self.column_name
@@ -283,12 +288,12 @@ class Single_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
 #Examples:
 #   1) Bar 1: Light On Percentage, Bar 2: Occupied Percentage
 #   2) Bar 1: Door Open, Bar 2: Door Closed
-class Twin_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
+class Twin_Bar_Subinterval_Plotter(Plotter, gen_plt.Generic_Bar_Plotter):
 
     def __init__(self, columns):
         self.columns = columns
         self.color_params = color_param.copy_new_list_length(2)
-        Generic_Bar_Plotter.__init__(self)
+        Plotter.__init__(self)
 
     def get_default_parameters(self):
         return None
@@ -305,10 +310,10 @@ class Twin_Bar_Subinterval_Plotter(Generic_Bar_Plotter):
 #Examples:
 #   1) Bar 1: Light On Percentage, Bar 2: Occupied Percentage
 #   2) Bar 1: Door Open, Bar 2: Door Closed
-class Twin_Bar_24_Hour_Average(Generic_Bar_Plotter):
+class Twin_Bar_24_Hour_Average(Plotter, gen_plt.Generic_Bar_Plotter):
 
     def __init__(self):
-        Generic_Bar_Plotter.__init__(self)
+        Plotter.__init__(self)
 
     def get_default_parameters(self):
         return None
@@ -323,10 +328,10 @@ class Twin_Bar_24_Hour_Average(Generic_Bar_Plotter):
 #Creates an hourly bar plot
 #The bar quantity can come from any interval based data reading
 #   -> Temperature and Power data
-class Single_Bar_Hourly_Average(Generic_Bar_Plotter):
+class Single_Bar_Hourly_Average(Plotter, gen_plt.Generic_Bar_Plotter):
 
     def __init__(self):
-        Generic_Bar_Plotter.__init__(self)
+        Plotter.__init__(self)
 
     def get_default_parameters(self):
         return None
@@ -343,10 +348,10 @@ class Single_Bar_Hourly_Average(Generic_Bar_Plotter):
 #Examples:
 #   1) Temperature and RH
 #   2) Voltage and Current
-class Twin_Bar_Subinterval_Two_Scales_Plotter(Generic_Bar_Plotter):
+class Twin_Bar_Subinterval_Two_Scales_Plotter(Plotter, gen_plt.Generic_Bar_Plotter):
 
     def __init__(self):
-        Generic_Bar_Plotter.__init__(self)
+        Plotter.__init__(self)
 
     def get_default_parameters(self):
         return None
@@ -363,10 +368,10 @@ class Twin_Bar_Subinterval_Two_Scales_Plotter(Generic_Bar_Plotter):
 #Examples:
 #   1) Temperature and RH
 #   2) Voltage and Current
-class Twin_Bar_Hourly_Average_Two_Scales_Plotter(Generic_Bar_Plotter):
+class Twin_Bar_Hourly_Average_Two_Scales_Plotter(Plotter, gen_plt.Generic_Bar_Plotter):
 
     def __init__(self):
-        Generic_Bar_Plotter.__init__(self)
+        Plotter.__init__(self)
 
     def get_default_parameters(self):
         return None

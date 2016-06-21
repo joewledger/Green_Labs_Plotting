@@ -1,14 +1,15 @@
-import matplotlib
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 from PyQt5 import QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+
 import package.hobo_processing.hobo_file_reader as hfr
+import package.plotting.implemented_plotters as imp_plt
+
 from collections import *
 import itertools
-
-matplotlib.use("Qt5Agg")
 
 
 class CanvasCollection():
@@ -34,30 +35,30 @@ class CanvasCollection():
                                  "temp": self.initialize_temp_plotters()}
 
     def initialize_state_plotters(self):
-        plotters = [State_Bar_Chart_Plotter()]
+        plotters = [imp_plt.State_Bar_Chart_Plotter()]
         return plotters
 
     def initialize_light_plotters(self):
-        plotters = [Light_Occupancy_Pie_Chart_Plotter(i) for i in range(0, len(Plotter.subset_functions))]
-        plotters.append(Light_Occupancy_Pie_Chart_Quad_Plotter())
+        plotters = [imp_plt.Light_Occupancy_Pie_Chart_Plotter(i) for i in range(0, len(imp_plt.Plotter.subset_functions))]
+        plotters.append(imp_plt.Light_Occupancy_Pie_Chart_Quad_Plotter())
         return plotters
 
     def initialize_power_plotters(self):
         power_columns = hfr.HoboDataContainer.legal_columns["power"]
-        plotters = [Generic_Hourly_Average_Plotter(column) for column in power_columns]
-        plotters.extend([Single_Bar_Subinterval_Plotter(column) for column in power_columns])
+        plotters = [imp_plt.Hourly_Average_Plotter(column) for column in power_columns]
+        plotters.extend([imp_plt.Single_Bar_Subinterval_Plotter(column) for column in power_columns])
         return plotters
 
     def initialize_temp_plotters(self):
         temp_columns = hfr.HoboDataContainer.legal_columns["temp"]
-        plotters = [Generic_Hourly_Average_Plotter(column) for column in temp_columns]
-        plotters.extend([Generic_Scatter_Plotter(list(x)) for x in itertools.combinations(temp_columns, 2)])
-        plotters.extend([Single_Bar_Subinterval_Plotter(column) for column in temp_columns])
+        plotters = [imp_plt.Hourly_Average_Plotter(column) for column in temp_columns]
+        plotters.extend([imp_plt.Scatter_Plotter(list(x)) for x in itertools.combinations(temp_columns, 2)])
+        plotters.extend([imp_plt.Single_Bar_Subinterval_Plotter(column) for column in temp_columns])
         return plotters
 
     def initialize_blank_canvas_and_plotter(self):
         self.canvas_list.append(MplCanvas(parent=self.parent, color=self.color))
-        self.plotters.append(Plotter())
+        self.plotters.append(imp_plt.Plotter())
         self.plotters[0].plot(self.canvas_list[0], None)
 
     def update_hobo_data_container(self, hdc):

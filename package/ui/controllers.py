@@ -1,5 +1,5 @@
 from package.utils import dialog_utils
-from package.plotting import plotting as plt
+from package.plotting import canvases as canv
 import package.utils.param_utils as param_utils
 
 import package.hobo_processing.hobo_file_reader as hfr
@@ -23,7 +23,7 @@ class Main_Controller():
         self.app = app
         self.ui = ui
         background_color = self.app.get_background_color()
-        self.canvas_collection = plt.CanvasCollection(self.ui.centralWidget, background_color)
+        self.canvas_collection = canv.CanvasCollection(self.ui.centralWidget, background_color)
         self.graph_edit = None
 
     def setup_controllers(self):
@@ -52,9 +52,9 @@ class Main_Controller():
             save_file = self.ui.save_file.text()
             save_file = (save_file if save_file.endswith(save_format) else save_file + save_format)
             save_directory = self.ui.display_save_loc.text()
-            save_location = "%s/%s" % (save_directory,save_file)
+            save_location = "%s/%s" % (save_directory, save_file)
             self.canvas_collection.save_current(save_location)
-            dialog_utils.messageDialog("Save confirmation","Image successfully saved.")
+            dialog_utils.messageDialog("Save confirmation", "Image successfully saved.")
 
     def recieve_edit_graph(self):
         curr_plotter = self.canvas_collection.get_current_plotter()
@@ -63,15 +63,14 @@ class Main_Controller():
         curr_parameters = curr_plotter.parameters
 
         if(not self.check_unsaved_changes() and len(curr_parameters) > 0):
-            
             comm = Communicate_Parameter_Collection()
             comm.signal.connect(self.recieve_graph_changes)
 
-            graph_edit = ged.GraphEditWidget(default_parameters,curr_parameters,comm)
+            graph_edit = ged.GraphEditWidget(default_parameters, curr_parameters, comm)
             graph_edit.show()
             self.graph_edit = graph_edit
 
-    def recieve_graph_changes(self,parameter_collection):
+    def recieve_graph_changes(self, parameter_collection):
         self.canvas_collection.update_curr_plot_params(parameter_collection)
 
     def determine_save_format(self):
@@ -92,16 +91,16 @@ class Main_Controller():
     def recieve_generate_graphs(self):
         comm = Communicate()
         comm.signal.connect(self.recieve_data_container)
-        self.start_import(comm,self.app.working_file)        
+        self.start_import(comm, self.app.working_file)
 
     def recieve_view_previous(self):
-        self.generic_change_view(lambda x : x - 1)
+        self.generic_change_view(lambda x: x - 1)
 
     def recieve_view_next(self):
-        self.generic_change_view(lambda x : x + 1)
-        
-    def generic_change_view(self,change_func):
-        if(change_func(self.app.curr_graph) in range(1,self.app.graph_count + 1)):
+        self.generic_change_view(lambda x: x + 1)
+
+    def generic_change_view(self, change_func):
+        if(change_func(self.app.curr_graph) in range(1, self.app.graph_count + 1)):
             if(not self.check_unsaved_changes()):
                 self.app.curr_graph = change_func(self.app.curr_graph)
                 self.canvas_collection.view_canvas(self.app.curr_graph)
@@ -117,26 +116,26 @@ class Main_Controller():
         return False
 
     def set_graph_count(self):
-        self.ui.graph_count.setText("%d/%d" % (self.app.curr_graph,self.app.graph_count))
+        self.ui.graph_count.setText("%d/%d" % (self.app.curr_graph, self.app.graph_count))
 
-    def start_import(self,comm,datafile):  
-        thread = threading.Thread(target=self.import_datafile,args=(datafile,comm,))
+    def start_import(self, comm, datafile):
+        thread = threading.Thread(target=self.import_datafile, args=(datafile, comm,))
         thread.start()
 
-    def import_datafile(self,datafile,comm):
+    def import_datafile(self, datafile, comm):
         self.ui.generate_graphs.setEnabled(False)
         self.ui.program_status.setText("Importing Datafile")
         hdc = hfr.HoboDataContainer()
         hdc.import_datafile(datafile)
         comm.signal.emit(hdc)
 
-    def recieve_data_container(self,hdc):
+    def recieve_data_container(self, hdc):
         self.app.hobo_data_container = hdc
         self.ui.program_status.setText("Generating Graphs")
         self.canvas_collection.initialize_plotters_and_canvases(hdc.sensor_type)
         thread = threading.Thread(target=self.update_plots)
         thread.start()
-        
+
     def update_plots(self):
         try:
             self.canvas_collection.update_plots(self.app.hobo_data_container)
