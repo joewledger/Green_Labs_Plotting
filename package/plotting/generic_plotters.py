@@ -1,6 +1,44 @@
 import numpy as np
 
 
+class Generic_Pie_Plotter():
+
+    def single_pie_chart_plot(self, axes, values, title=None, title_fontsize=12, labels=None, labels_fontsize=8, autopct='%1.1f%%',
+                              colors=["green", "red", "yellow", "blue"], autorotate=False):
+        return None
+
+    def quad_pie_chart_plot(self, axes, values, title=None, title_fontsize=12, labels=None, labels_fontsize=8, autopct='%1.1f%%',
+                            colors=["green", "red", "yellow", "blue"], autorotate=False):
+        return None
+
+    def adjust_text(self, patch, text, percent, autotext=None, text_fontsize=8, autotext_fontsize=10, text_height=1.1, text_adjust=8,
+                    autotext_height=.6, autotext_adjust=15, min_percent_visible=.01):
+
+        angle = lambda p: (p.theta2 + p.theta1) / 2
+        new_x = lambda p, height, adjust: p.r * height * np.cos((angle(p) - adjust) * np.pi / 180)
+        new_y = lambda p, height, adjust: p.r * height * np.sin((angle(p) - adjust) * np.pi / 180)
+        new_position = lambda p, height, adjust: (new_x(p, height, adjust), new_y(p, height, adjust))
+        patch_width = lambda p: p.theta2 - p.theta1
+
+        wide_enough = patch_width(patch) > 10
+
+        if(not wide_enough):
+            t_x, t_y = new_position(patch, text_height, text_adjust)
+            text.set_position((t_x, t_y))
+
+        visible = percent > min_percent_visible
+        text.set_visible(visible)
+
+        if(autotext):
+            autotext_position = (new_position(patch, autotext_height, autotext_adjust) if not wide_enough else new_position(patch, .5, 0))
+            self.adjust_autotext(autotext, autotext_position, autotext_fontsize, visible=visible)
+
+    def adjust_autotext(self, autotext, new_position, fontsize, visible=True):
+        autotext.set_fontsize(fontsize)
+        autotext.set_visible(visible)
+        autotext.set_position(new_position)
+
+
 class Generic_Bar_Plotter():
 
     def single_bar_plot(self, axes, values, errors=None, title=None, title_fontsize=12, x_ticks=None, x_tick_fontsize=12,

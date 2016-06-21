@@ -7,6 +7,7 @@ from PyQt5.QtCore import *
 import pandas as pd
 import numpy as np
 
+
 class Plotter():
 
     subset_functions = OrderedDict([(lambda hdc: hdc, "Entire Study Period"),
@@ -55,7 +56,7 @@ class Light_Occupancy_Pie_Chart_Plotter(Plotter):
     def __init__(self, n):
         self.color_param = color_param.copy_new_list_length(4)
         self.hdc_labels = ['Light On & Occ', 'Light On & Unocc', 'Light Off & Occ', 'Light Off & Unocc']
-        self.graph_labels = ["Light on &\nOccupied", "Light on &\nUnoccupied", "Light off &\nOccupied", "Light off &\nUnoccupied"]
+        self.graph_labels = [s.replace("& ", "&\n").replace("Occ", "Occupied").replace("Unocc", "Unoccupied") for s in self.hdc_labels]
         self.base_title = "Lighting Patterns"
         self.title_gen = lambda n: "%s, %s" % (self.base_title, list(self.subset_functions.values())[n])
         self.subset_index = n
