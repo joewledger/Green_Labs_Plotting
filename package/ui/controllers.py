@@ -143,7 +143,6 @@ class Main_Controller():
             self.app.graph_count = self.canvas_collection.num_canvases
             self.set_graph_count()
             self.ui.program_status.setText("Done Generating Graphs")
-            self.ui.save_status.setText("Unsaved graph")
         except:
             self.ui.program_status.setText("Failed to generate plots")
         self.ui.generate_graphs.setEnabled(True)
