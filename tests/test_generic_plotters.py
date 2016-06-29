@@ -14,6 +14,18 @@ def generic_test_dummy_data(data, plotting_function, **kwargs):
     plt.show()
 
 
+def test_single_pie_chart():
+
+    values = [.12, .35, .33, .20]
+    pie_plt = gen_plt.Generic_Pie_Plotter()
+
+    kwargs = dict(labels=["Test %d" % d for d in range(1, 5)], title="Example Title")
+
+    generic_test_dummy_data(values, pie_plt.single_pie_chart_plot, **kwargs)
+
+    pass
+
+
 def test_get_min_max_values():
 
     bar_plotter = gen_plt.Generic_Bar_Plotter()
