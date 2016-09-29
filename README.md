@@ -57,6 +57,13 @@ This code is licensed under the GNU LESSER GENERAL PUBLIC LICENSE Version 3
 The GUI is shown below:
 <img align="center" src="https://cloud.githubusercontent.com/assets/6250320/15837941/9efefafe-2c09-11e6-9d98-e7ac68c50df7.PNG">
 
+<br/>
+<br/>
+
+The widget that allows for easy customization of visualizations is shown below:
+<img align="center" src="https://cloud.githubusercontent.com/assets/6250320/18954683/10de67dc-8622-11e6-8775-4f8e3f10a865.PNG">
+
+<br/>
 
 Here are some of the visualizations the GUI allows the user to easily create:
 <img align="center" src="https://cloud.githubusercontent.com/assets/6250320/15837951/a7f1655c-2c09-11e6-9575-e2f61eaa6a22.png">
