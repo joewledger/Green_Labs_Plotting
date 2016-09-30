@@ -6,6 +6,7 @@ from package.ui import mainwindow, controllers
 import package.hobo_processing.hobo_file_reader as hfr
 
 
+#This class contains the application state and the function that effectivly starts the application process
 class Application:
 
     def __init__(self):
@@ -16,6 +17,7 @@ class Application:
         self.graph_count = 0
         self.hobo_data_container = hfr.HoboDataContainer()
 
+    #Starts the application process
     def run(self):
         app = QApplication(sys.argv)
         window = QMainWindow()
@@ -28,5 +30,7 @@ class Application:
         window.show()
         app.exec_()
 
+    #Gets the background color of the applications main window as a hexadecimal string
+    #Assumes run() has been called, otherwise an exception will be thrown
     def get_background_color(self):
         return self.window.palette().color(QtGui.QPalette.Background).name()
