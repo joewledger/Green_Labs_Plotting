@@ -5,6 +5,7 @@ import math
 
 class HoboDataContainer():
 
+    #The columns that are legal in a HOBO csv file
     legal_columns = {
         "light": ['Light', 'Occupancy', 'Light On & Occ', 'Light On & Unocc', 'Light Off & Occ', 'Light Off & Unocc'],
         "state": ['State'],
@@ -27,6 +28,7 @@ class HoboDataContainer():
         # Stored as a pandas TimeDelta object
         self.total_time = None
 
+    #Reads, parses, and cleans a given input file and puts the data into a pandas dataframe
     def import_datafile(self, datafile):
 
         self.filename = datafile
@@ -40,6 +42,8 @@ class HoboDataContainer():
         if(self.valid_datafile):
             self.update_fields()
 
+    #Update the metadata (descriptions of dataframe) based on data contained in the input datafile
+    #If the data is boolean (originally stored as 0's and 1's in imported file), we convert it to python True/False
     def update_fields(self):
         self.infer_sensor_type()
         self.fields = self.dataframe.columns
@@ -51,6 +55,7 @@ class HoboDataContainer():
         self.infer_date_range()
         self.infer_total_time()
 
+    #Updates a dataframe using a given function and ensures metadata is up to date using self.update_fields()
     def update_dataframe(self, update_func):
         self.dataframe = update_func(self.dataframe)
         self.update_fields()
@@ -93,8 +98,7 @@ class HoboDataContainer():
         self.dataframe = self.dataframe.groupby(self.dataframe.index).last()
 
     # remove rows with logging information (e.g. all 0'd out rows in power file)
-    # Strategy: keep the data within the biggest gap between null rows, throw
-    # rest of data out
+    # Strategy: keep the data within the biggest gap between null rows, throw rest of data out
     def _remove_logging_information(self):
 
         index = list(self.dataframe.index)
@@ -152,6 +156,7 @@ class HoboDataContainer():
 
         self.sensor_type = max(scores.keys(), key=lambda x: scores[x])
 
+    #Determines if a all data in the given dataframe is boolean (represented as 0 or 1 by the Hoboware software)
     def infer_boolean_data(self):
         boolean_values = [np.float64(0), np.float64(1)]
         is_boolean_column = lambda col_name: all(
@@ -159,10 +164,13 @@ class HoboDataContainer():
         self.boolean_valued = all(is_boolean_column(x)
                                   for x in self.dataframe.columns)
 
+    #Converts data consisting of (0s and 1s) into boolean data
     def convert_boolean_data(self):
         self.dataframe.fillna(method="ffill", inplace=True)
         self.dataframe = self.dataframe.astype('bool')
 
+    #Checks if the dataframe consists of even time increments
+    #Sets self.even_time_increments accordingly
     def infer_even_time_increments(self):
         index = list(self.dataframe.index)
         if(len(index) > 1):
@@ -172,9 +180,11 @@ class HoboDataContainer():
         else:
             self.even_time_increments = False
 
+    #Checks if there are any missing values in the dataframe
     def infer_missing_values(self):
         self.missing_values = self.dataframe.isnull().any()
 
+    #Sets self.date_range to a tuple containing the first and last timestamps in the dataframe
     def infer_date_range(self):
         index = self.dataframe.index
         if(len(index) > 1):
@@ -182,6 +192,7 @@ class HoboDataContainer():
         else:
             self.date_range = None
 
+    #Checks the total time difference in the dataframe
     def infer_total_time(self):
         if(self.date_range):
             self.total_time = pd.Timedelta(
@@ -189,6 +200,7 @@ class HoboDataContainer():
         else:
             self.total_time = None
 
+    #Trims the dataframe to include only buisness hours (start=9AM, end=5PM)
     def buisness_hours(self, inplace=False, start_time='9:00', end_time='17:00'):
         dataframe = self.dataframe
         integer_index = dataframe.index.indexer_between_time(
@@ -197,6 +209,7 @@ class HoboDataContainer():
 
         return self._updated_object(copy_dataframe, inplace=inplace)
 
+    #Trims the dataframe to include only non-buisness hours between (5 PM and 9 AM)
     def non_buisness_hours(self, inplace=False, start_time='9:00', end_time='17:00'):
         dataframe = self.dataframe
         integer_index = dataframe.index.indexer_between_time(
@@ -206,22 +219,27 @@ class HoboDataContainer():
 
         return self._updated_object(copy_dataframe, inplace=inplace)
 
+    #Trims the dataframe to include only weekdays (M-F)
     def weekdays(self, inplace=False, start_day=0, end_day=5):
         dataframe = self._get_filtered_dataframe_by_weekday_status(
             lambda x: x in range(start_day, end_day))
         return self._updated_object(dataframe, inplace=inplace)
 
+    #Trims the dataframe to include only weekends (Sa-Su)
     def weekends(self, inplace=False, start_day=0, end_day=5):
         dataframe = self._get_filtered_dataframe_by_weekday_status(
             lambda x: x not in range(start_day, end_day))
         return self._updated_object(dataframe, inplace=inplace)
 
+    #Helper function for self.weekdays and self.weekends
+    #Trims the dataframe to include either weekdays or weekdends based on the filter function provided
     def _get_filtered_dataframe_by_weekday_status(self, filter_func):
         dataframe = self.dataframe
         weekday = [filter_func(x) for x in dataframe.index.weekday]
         copy_dataframe = dataframe.ix[weekday]
         return copy_dataframe
 
+    #Returns a new HoboDataContainer() given a pandas dataframe
     def _updated_object(self, dataframe, inplace=False):
 
         object = (self if inplace else HoboDataContainer())
@@ -293,19 +311,24 @@ class HoboDataContainer():
         series = dataframe[series_name]
         return series.resample(interval_length).apply(resampler)
 
+    #Gets the interval average using calculate_interval_statistic
     def interval_averages(self, series_name, interval_length, start_time=None, end_time=None):
         mean = lambda array_like: np.mean(array_like)
         return self.calculate_interval_statistic(series_name, interval_length, mean, start_time=start_time, end_time=end_time)
 
+    #Gets the interval standard deviation using calculate_interval_statistic
     def interval_std(self, series_name, interval_length, start_time=None, end_time=None):
         std_dev = lambda array_like: np.std(array_like)
         return self.calculate_interval_statistic(series_name, interval_length, std_dev, start_time=start_time, end_time=end_time)
 
+    #Gets the average value of a given series
     def series_average(self, series_name):
         return self.dataframe[series_name].mean()
 
+    #Gets teh standard deviation of a given series
     def series_std(self, series_name):
         return self.dataframe[series_name].std()
 
+    #Returns a string representation of the pandas dataframe
     def __str__(self):
         return self.dataframe.__str__()
